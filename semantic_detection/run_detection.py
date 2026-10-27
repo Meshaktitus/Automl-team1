@@ -13,7 +13,12 @@ ranked target suggestions -> problem-type recommendation, per dataset.
 Each result (one per dataset) has: dataset, target, target_source
 (user_override / top_suggestion / none), problem_type, confidence, source,
 needs_confirmation, evidence, alternatives, warnings, candidates (ranked),
-semantic_columns, status. Nothing is final until the user confirms.
+semantic_columns, dataset_characteristics, feature_columns, column_roles,
+leakage_checks, status. Everything is a recommendation with evidence; nothing
+is final until the user confirms.
+
+For one dataset per call use detect_dataset(profile, ...), which returns a
+single result instead of a list.
 
 Command line:
     python run_detection.py --profiles <folder> [--quality file.json]
@@ -26,13 +31,23 @@ from pathlib import Path
 
 import pandas as pd
 
-from problem_detection import SUPPORTED_PROBLEM_TYPES, detect_problem
-from profiling_integration import analyze_profile
+from problem_detection import (
+    ATTRIBUTE_DATE_TOKENS,
+    AUDIT_TOKENS,
+    SUPPORTED_PROBLEM_TYPES,
+    detect_problem,
+    time_column_info,
+)
+from profiling_integration import analyze_profile, load_profile
 from quality_integration import (
+    _penalised,
+    _worst,
     apply_quality_to_problem,
     apply_quality_to_suggestions,
+    issues_by_column,
     load_quality_report,
 )
+from semantic_rules import tokenize
 from target_suggestions import suggest_targets
 
 PROJECT_FOLDER = Path(__file__).resolve().parent
@@ -60,11 +75,95 @@ def _route_quality(quality, datasets, default_dataset):
     return {"detected_issues": issues}, skipped
 
 
+LEAKAGE_CHECKS = {
+    "status": "pending_integration",
+    "reason": ("Target-leakage checks need column correlations from the "
+               "profiling module (planned, not yet available). Not run."),
+}
+NOT_FEATURE_TYPES = {"identifier", "email", "phone"}
+
+
+def build_column_roles(group, target, time_columns, quality_by_column):
+    """Recommend a role for every column, each with a reason.
+
+    Roles: target, feature, identifier, date, time, text, excluded.
+    These are recommendations with evidence, not decisions.
+    """
+    roles = []
+    for _, row in group.iterrows():
+        column = str(row["column"])
+        kind = str(row["semantic_type"]).lower()
+        tokens = set(tokenize(column))
+        unique = row.get("unique_values")
+        missing = float(row.get("missing_pct") or 0)
+        entry = {
+            "column": column, "semantic_type": kind,
+            "sensitive": bool(row.get("sensitive")),
+            "time_axis": False, "quality_blocked": False,
+            "quality_issues": [],
+        }
+        if column == target:
+            role, reason = "target", "Suggested or chosen target column."
+        elif tokens & AUDIT_TOKENS:
+            role, reason = "excluded", "Audit or technical metadata column."
+        elif kind in NOT_FEATURE_TYPES:
+            role = "identifier"
+            reason = ("Identifier or contact value; useful for joining "
+                      "tables, not as a model input.")
+        elif kind == "unknown":
+            role, reason = "excluded", "Type could not be determined."
+        elif pd.notna(unique) and unique <= 1:
+            role, reason = "excluded", "Constant or empty column."
+        elif missing >= 80:
+            role, reason = "excluded", f"{missing}% of values are missing."
+        elif kind == "date":
+            role = "date"
+            if column in time_columns:
+                entry["time_axis"] = True
+                reason = "Date column that can act as a time axis."
+            else:
+                reason = ("Date that describes a record or person; usable "
+                          "after turning it into age, duration or similar.")
+        elif kind == "time":
+            role, reason = "time", "Time-of-day column."
+        elif kind == "text":
+            role = "text"
+            reason = "Free text; needs text processing before use."
+        else:
+            role, reason = "feature", f"{kind} column usable as a model input."
+            if entry["sensitive"]:
+                reason += " Sensitive; review fairness and privacy."
+            if missing >= 20:
+                reason += f" {missing}% missing."
+
+        issues = quality_by_column.get(column, [])
+        entry["quality_issues"] = [
+            f"{i['rule_id']} ({i['label'].lower()})" for i in issues]
+        penalising = _penalised(issues)
+        if penalising and _worst(penalising) == "blocking":
+            entry["quality_blocked"] = True
+            reason += " Blocking quality issue reported; review before use."
+        entry["role"], entry["reason"] = role, reason
+        roles.append(entry)
+    return roles
+
+
 def run_detection(profiles, quality=None, goal=None, overrides=None,
-                  problem_type_override=None, quality_dataset=None):
+                  problem_type_override=None, quality_dataset=None,
+                  quality_settings=None):
     rows = []
+    characteristics = {}
     for profile in profiles:
-        rows.extend(analyze_profile(profile))
+        loaded = load_profile(profile)
+        part = analyze_profile(loaded)
+        rows.extend(part)
+        info = loaded["dataset"]
+        characteristics[part[0]["dataset"]] = {
+            "row_count": info["row_count"],
+            "column_count": info["column_count"],
+            "duplicate_row_count": info["duplicate_row_count"],
+            "profile_status": loaded.get("status"),
+        }
     if not rows:
         raise ValueError("No profiles given")
     report = pd.DataFrame(rows)
@@ -78,7 +177,8 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     if quality is not None:
         routed, skipped_quality = _route_quality(
             quality, datasets, quality_dataset)
-        suggestions = apply_quality_to_suggestions(suggestions, routed)
+        suggestions = apply_quality_to_suggestions(
+            suggestions, routed, settings=quality_settings)
 
     results = []
     for dataset in datasets:
@@ -98,7 +198,8 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             report, dataset, target=target, business_goal=goal,
             problem_type_override=problem_type_override)
         if routed is not None:
-            problem = apply_quality_to_problem(problem, routed, dataset)
+            problem = apply_quality_to_problem(
+                problem, routed, dataset, settings=quality_settings)
 
         warnings = list(problem["warnings"])
         if dataset in unknown:
@@ -119,8 +220,28 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             keep.append("quality_issues")
         candidates = group[group["candidate_target"] != "(no target)"] \
             .head(MAX_CANDIDATES)[keep]
-        columns = report[report["dataset"] == dataset][[
+        dataset_rows = report[report["dataset"] == dataset]
+        columns = dataset_rows[[
             "column", "semantic_type", "confidence", "sensitive"]]
+        time_cols = [name for name, _ in time_column_info(dataset_rows)]
+        quality_by_column = (
+            issues_by_column(routed, dataset) if routed is not None else {})
+        roles = build_column_roles(
+            dataset_rows, target, time_cols, quality_by_column)
+        feature_names = [r["column"] for r in roles if r["role"] == "feature"]
+        facts = dict(characteristics[dataset])
+        facts.update({
+            "feature_column_count": len(feature_names),
+            "time_columns": time_cols,
+            "identifier_columns": [
+                r["column"] for r in roles if r["role"] == "identifier"],
+            "date_columns": [
+                r["column"] for r in roles if r["role"] == "date"],
+            "sensitive_columns": [
+                r["column"] for r in roles if r["sensitive"]],
+            "excluded_columns": [
+                r["column"] for r in roles if r["role"] == "excluded"],
+        })
 
         results.append({
             "dataset": dataset,
@@ -136,6 +257,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "candidates": json.loads(candidates.to_json(orient="records")),
             "semantic_columns": json.loads(
                 columns.to_json(orient="records")),
+            "dataset_characteristics": facts,
+            "feature_columns": feature_names,
+            "column_roles": roles,
+            "leakage_checks": dict(LEAKAGE_CHECKS),
             "status": STATUS,
         })
     for name in unknown:
@@ -145,9 +270,18 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "source": "data_rules", "needs_confirmation": True,
             "evidence": [], "alternatives": [],
             "warnings": [f"Dataset '{name}' not found in the profiles"],
-            "candidates": [], "semantic_columns": [], "status": STATUS,
+            "candidates": [], "semantic_columns": [],
+            "dataset_characteristics": {}, "feature_columns": [],
+            "column_roles": [], "leakage_checks": dict(LEAKAGE_CHECKS),
+            "status": STATUS,
         })
     return results
+
+
+def detect_dataset(profile, **kwargs):
+    """One dataset per call: same inputs as run_detection, but takes a single
+    profile and returns a single result."""
+    return run_detection([profile], **kwargs)[0]
 
 
 def main():

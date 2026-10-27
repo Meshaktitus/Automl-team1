@@ -44,10 +44,31 @@ SEVERITY_ALIASES = {
     "blocking": "blocking",
 }
 SEVERITY_RANK = {"warning": 1, "medium": 2, "error": 3, "blocking": 4}
+# Proposed defaults, not approved. Not in the SRS; pass `settings` to change.
 SCORE_FACTOR = {"warning": 1.0, "medium": 0.85, "error": 0.6, "blocking": 0.0}
 CONFIDENCE_PENALTY = {
     "warning": 0.0, "medium": 0.05, "error": 0.10, "blocking": 0.30,
 }
+DEFAULT_SETTINGS = {
+    "score_factor": SCORE_FACTOR,
+    "confidence_penalty": CONFIDENCE_PENALTY,
+}
+
+
+def resolve_settings(settings=None):
+    """Defaults, with any levels given in `settings` replaced. Example:
+    {"score_factor": {"medium": 1.0}, "confidence_penalty": {"blocking": 0.2}}
+    """
+    out = {k: dict(v) for k, v in DEFAULT_SETTINGS.items()}
+    for key, levels in (settings or {}).items():
+        if key not in out:
+            raise ValueError(
+                f"Unknown quality setting '{key}'; use {sorted(out)}")
+        for level, value in levels.items():
+            if level not in SEVERITY_RANK:
+                raise ValueError(f"Unknown severity level '{level}'")
+            out[key][level] = float(value)
+    return out
 # Compared after removing a leading "RULE_", so RULE_NULL_001 and NULL_CHECK
 # are treated the same. Duplicate-row findings are about the table.
 NOTE_ONLY_PREFIXES = (
@@ -206,11 +227,13 @@ def _worst(issues):
     return max(issues, key=lambda i: SEVERITY_RANK[i["severity"]])["severity"]
 
 
-def apply_quality_to_suggestions(suggestions, report, dataset=None):
+def apply_quality_to_suggestions(suggestions, report, dataset=None,
+                                 settings=None):
     """Return a copy of the target suggestions adjusted by the quality report.
 
     Pass dataset so the report is only applied to that dataset's rows.
     """
+    config = resolve_settings(settings)
     out = suggestions.copy()
     out["quality_issues"] = ""
     by_column = issues_by_column(report, dataset)
@@ -236,7 +259,7 @@ def apply_quality_to_suggestions(suggestions, report, dataset=None):
         worst = _worst(penalised)
         if pd.notna(row["score"]):
             out.at[index, "score"] = round(
-                float(row["score"]) * SCORE_FACTOR[worst], 1
+                float(row["score"]) * config["score_factor"][worst], 1
             )
         user_selected = row["priority"] == "User-selected"
         if worst == "blocking" and not user_selected:
@@ -280,11 +303,12 @@ def _rerank(frame):
     return ordered.reset_index(drop=True)
 
 
-def apply_quality_to_problem(result, report, dataset=None):
+def apply_quality_to_problem(result, report, dataset=None, settings=None):
     """Return a copy of a detect_problem() result adjusted by the report.
 
     Only issues on the chosen target column are used.
     """
+    config = resolve_settings(settings)
     out = dict(result)
     out["warnings"] = list(result.get("warnings", []))
     target = out.get("target")
@@ -305,7 +329,8 @@ def apply_quality_to_problem(result, report, dataset=None):
     worst = _worst(penalised)
     if out.get("source") != "user_override":
         out["confidence"] = round(
-            max(0.0, out["confidence"] - CONFIDENCE_PENALTY[worst]), 2
+            max(0.0, out["confidence"]
+                - config["confidence_penalty"][worst]), 2
         )
         if worst in {"error", "blocking"}:
             out["needs_confirmation"] = True
