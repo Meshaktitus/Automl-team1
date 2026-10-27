@@ -366,7 +366,9 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "recommended_feature_columns": [],
             "approved_feature_columns": None,
             "features_status": "recommended_pending_confirmation",
-            "column_roles": [], "leakage_checks": dict(LEAKAGE_CHECKS),
+            "column_roles": [],
+            "leakage_checks": {**check_leakage(None, None, 0, leakage_settings),
+                               "reason": LEAKAGE_CHECKS["reason"]},
             "status": STATUS,
         })
     return results

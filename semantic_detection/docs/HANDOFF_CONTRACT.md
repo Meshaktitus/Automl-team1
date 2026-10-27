@@ -32,6 +32,8 @@ Command line: `python run_detection.py --profiles <folder> [--quality file.json]
 
 ## 2. Result fields
 
+**Machine-readable schema:** `handoff_result.schema.json` (JSON Schema 2020-12, one result per dataset; `run_detection` returns a list of these). Every real output is checked against it by `test_handoff_schema.py`. If this table and the schema ever disagree, fix both and the test will say which is wrong.
+
 **Core** (always present):
 
 | Field | Type | Meaning |
