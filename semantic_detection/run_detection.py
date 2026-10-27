@@ -26,6 +26,10 @@ Command line:
     python run_detection.py --profiles <folder> [--quality file.json]
         [--quality-dataset NAME] [--goal "..."] [--override DATASET=COLUMN]
         [--problem-type TYPE] [--output outputs/integrated_detection.json]
+
+Leakage check: uses the profile's `correlations`. Flags (does not remove)
+columns whose correlation with the target is >= 0.80 (possible) or >= 0.95
+(strong). Change with leakage_settings={"possible": 0.7, "strong": 0.9}.
 """
 import argparse
 import json
@@ -40,6 +44,7 @@ from problem_detection import (
     detect_problem,
     time_column_info,
 )
+from leakage_checks import check_leakage, read_correlations
 from profiling_integration import analyze_profile, load_profile
 from quality_integration import (
     _penalised,
@@ -87,8 +92,8 @@ def _route_quality(quality, datasets, default_dataset):
 
 LEAKAGE_CHECKS = {
     "status": "pending_integration",
-    "reason": ("Target-leakage checks need column correlations from the "
-               "profiling module (planned, not yet available). Not run."),
+    "reason": ("Dataset not found in the profiles, so the leakage check "
+               "was not run."),
 }
 NOT_FEATURE_TYPES = {"identifier", "email", "phone"}
 
@@ -153,7 +158,8 @@ def build_column_roles(group, target, time_columns, quality_by_column,
             if missing >= 20:
                 reason += f" {missing}% missing."
 
-        issues = quality_by_column.get(column, [])
+        issues = [i for i in quality_by_column.get(column, [])
+                  if i["affected_count"] != 0]   # 0 rows = check passed
         entry["quality_issues"] = [
             f"{i['rule_id']} ({i['label'].lower()})" for i in issues]
         entry["quality_issue_codes"] = sorted({i["rule_id"] for i in issues})
@@ -171,12 +177,14 @@ def build_column_roles(group, target, time_columns, quality_by_column,
 
 def run_detection(profiles, quality=None, goal=None, overrides=None,
                   problem_type_override=None, quality_dataset=None,
-                  quality_settings=None, approved_features=None):
+                  quality_settings=None, approved_features=None,
+                  leakage_settings=None):
     """approved_features: optional {dataset: [columns]} (or a plain list when
     there is one dataset) that the user has approved for training."""
     rows = []
     characteristics = {}
     profile_columns = {}
+    profile_correlations = {}
     for profile in profiles:
         loaded = load_profile(profile)
         part = analyze_profile(loaded)
@@ -184,6 +192,7 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         info = loaded["dataset"]
         profile_columns[part[0]["dataset"]] = {
             c["name"]: c for c in loaded["columns"]}
+        profile_correlations[part[0]["dataset"]] = read_correlations(loaded)
         characteristics[part[0]["dataset"]] = {
             "row_count": info["row_count"],
             "column_count": info["column_count"],
@@ -255,6 +264,18 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         roles = build_column_roles(
             dataset_rows, target, time_cols, quality_by_column,
             problem["problem_type"])
+        pairs, bad_pairs = profile_correlations[dataset]
+        leakage = check_leakage(pairs, target, bad_pairs, leakage_settings)
+        flagged = {x["column"]: x for x in leakage["suspects"]}
+        for r in roles:
+            hit = flagged.get(r["column"])
+            r["leakage_suspect"] = hit["level"] if hit else None
+            r["leakage_correlation"] = hit["correlation"] if hit else None
+            if hit and r["role"] == "feature":
+                r["reason"] += (" Possible target leakage (correlation "
+                                f"{hit['correlation']:+.2f} with the target).")
+        for x in leakage["suspects"]:
+            warnings.append("Possible target leakage: " + x["message"])
         feature_names = [r["column"] for r in roles if r["role"] == "feature"]
         recommended = [r["column"] for r in roles
                        if r["role"] == "feature" and not r["quality_blocked"]]
@@ -296,7 +317,8 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
 
         candidate_list = json.loads(candidates.to_json(orient="records"))
         for c in candidate_list:
-            found = quality_by_column.get(c["candidate_target"], [])
+            found = [i for i in quality_by_column.get(
+                c["candidate_target"], []) if i["affected_count"] != 0]
             c["quality_issue_codes"] = sorted({i["rule_id"] for i in found})
             reasons = [
                 f"{i['rule_id']}: {i['description']}".strip(": ")
@@ -328,7 +350,7 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "features_status": ("approved" if approved is not None
                                 else "recommended_pending_confirmation"),
             "column_roles": roles,
-            "leakage_checks": dict(LEAKAGE_CHECKS),
+            "leakage_checks": leakage,
             "status": STATUS,
         })
     for name in unknown:

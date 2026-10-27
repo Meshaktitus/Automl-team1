@@ -54,7 +54,7 @@ Command line: `python run_detection.py --profiles <folder> [--quality file.json]
 | `features_status` | enum | `recommended_pending_confirmation` or `approved` |
 | `column_roles` | list | A recommended role and reason for every column (section 5) |
 | `dataset_characteristics` | object | Dataset facts (section 6) |
-| `leakage_checks` | object | `status` and `reason`. Currently `pending_integration`: **not run** |
+| `leakage_checks` | object | `status` (`checked`, `not_checked` or `pending_integration`), `reason`, `thresholds`, `suspects[]` (`column`, `correlation`, `level` possible/strong, `message`) and `limits`. See section 5 |
 | `semantic_columns` | list | `column, semantic_type, confidence, sensitive` for every column |
 | `status` | text | Always `Proposed, pending verification` (the only value in this version) |
 
@@ -94,7 +94,7 @@ Fields: `rank, candidate_target, semantic_type, suggested_problem_type, score, c
 
 ## 5. Column roles
 
-Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_count, missing_pct, sensitive, needs_privacy_review, time_axis, quality_blocked, quality_issues, quality_issue_codes, preprocessing_hint`.
+Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_count, missing_pct, sensitive, needs_privacy_review, time_axis, quality_blocked, quality_issues, quality_issue_codes, preprocessing_hint, leakage_suspect, leakage_correlation`. Quality findings with 0 affected rows are treated as a passed check and are not listed.
 
 | Role | Meaning | Use as a normal model input? |
 |---|---|---|
@@ -110,7 +110,9 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 
 **`preprocessing_hint`** is a one-line recommendation (impute, encode, scale, date transformation, text processing or drop). It is a suggestion for Sinchana's step, not a decision.
 
-**Data quality is not target leakage.** `quality_issues`, `quality_issue_codes` and `quality_blocked` report data problems (for example an invalid range). `quality_blocked` is true only for a Blocking finding that is not a null, duplicate-row or key finding. Leakage means a column that gives away the target; it is reported separately in `leakage_checks` and is **not implemented yet**.
+**Data quality is not target leakage.** `quality_issues`, `quality_issue_codes` and `quality_blocked` report data problems (for example an invalid range). `quality_blocked` is true only for a Blocking finding that is not a null, duplicate-row or key finding. Leakage means a column that gives away the target; it is reported separately in `leakage_checks` and on each role as `leakage_suspect` (`possible`, `strong` or null) with `leakage_correlation`.
+
+**Leakage check (added after Sanjay's correlations arrived, 27 Oct).** It compares every column with the chosen target using the profile's `correlations[]`. A column with absolute correlation of at least 0.80 is `possible`, at least 0.95 is `strong`. These two thresholds are proposed defaults, not from the SRS, and can be changed (`leakage_settings`). A flagged column is **not removed**: it stays a feature with a warning, and the user decides. Status `checked` means the target was found in the correlations; `not_checked` means there is no target, or the target is not a numerical column (so it is not in the correlations); `pending_integration` means the profile had no correlations. **Limits:** numerical pairs only, straight-line relationships only; categorical targets, derived columns and time-based leakage are not detected.
 
 **Sensitive columns** have `sensitive` and `needs_privacy_review` true. They need an explicit privacy and fairness review before use.
 
@@ -131,7 +133,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 4. Train on `approved_feature_columns` when it is not null. Otherwise treat `recommended_feature_columns` as a proposal.
 5. Never use identifiers, excluded columns or the target as normal model inputs.
 6. Do not use a candidate with priority `Blocked by quality`, or a column with `quality_blocked` true, without the user's say-so.
-7. Show `warnings`, `validation_warnings` and `leakage_checks.status`. Do not treat leakage as checked while the status is `pending_integration`.
+7. Show `warnings`, `validation_warnings` and `leakage_checks.status`. Do not treat leakage as checked unless the status is `checked`, and remember its limits.
 
 ## 8. Examples (real outputs of the prototype, shortened)
 
@@ -790,7 +792,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 
 ## 9. Known limits and dependencies
 
-- **Target leakage: not implemented** (design only / pending integration). It needs column correlations from the profiling module. Not reported as done.
+- **Target leakage: partly implemented.** Correlation-based flagging works when the profile has `correlations[]` and the target is numerical. It does not cover categorical targets, derived columns or time-based leakage. The examples below were made from profiles without correlations, so they show `pending_integration`.
 - "Top suggestion" needs an outcome-like word in the column name.
 - Quality penalties are not in the SRS; they are configurable proposed defaults until approved. Null, duplicate-row, key and reference findings are notes only.
 - Everything is computed from the profile only. Time-series gaps, full class distributions beyond the top values, and value-level checks are not available.

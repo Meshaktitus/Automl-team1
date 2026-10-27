@@ -2,7 +2,7 @@
 
 Owner: Samarth (Team 1). Status as of Mon 26 Oct 2026: **Implemented and tested as a prototype; proposed, pending Team 1 review.** Nothing here is final until Meshak and the dependent owners agree it.
 
-Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `handoff_details.py` (target statistics, preprocessing hints, time info, validation warnings), `make_synthetic_datasets.py`. Tests: 191 test cases, all passing. Output contract for the AutoML handoff (revision 3, after Sumanth's review; to be agreed with Sinchana and the reviewer): `docs/HANDOFF_CONTRACT.md`.
+Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `leakage_checks.py` (correlation-based leakage flags), `handoff_details.py` (target statistics, preprocessing hints, time info, validation warnings), `make_synthetic_datasets.py`. Tests: 209 test cases, all passing. Output contract for the AutoML handoff (revision 3, after Sumanth's review; to be agreed with Sinchana and the reviewer): `docs/HANDOFF_CONTRACT.md`.
 
 ---
 
@@ -98,7 +98,7 @@ Note only, whatever the severity: rules about nulls (`NULL_CHECK`, `RULE_NULL_*`
 | Examples for dates, IDs, emails, percentages, categories, amounts | Implemented, tested |
 | Synthetic task datasets: churn (classification), house price (regression), sales (forecasting), customer segments (clustering), transactions (anomaly), ratings (recommendation), ambiguous targets | Implemented |
 | Ambiguous-target cases | Implemented, tested |
-| Target-leakage checks | **Design only / pending integration.** Not implemented. Depends on column correlations from the profiling module (planned Day 4). The output reports `leakage_checks.status = pending_integration`; it is not reported as done |
+| Target-leakage checks | **Partly implemented (27 Oct).** Uses Sanjay's `correlations[]`: flags columns with correlation of at least 0.80 (possible) or 0.95 (strong) with a numerical target; flagged columns are kept and warned about, not removed. Thresholds are proposed defaults. Not covered: categorical targets, derived columns, time-based leakage. Status is `pending_integration` when a profile has no correlations |
 
 ## 7. Results on the HR data (Employee, EmployeePayHistory)
 
@@ -110,7 +110,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 
 ## 8. Test report
 
-191 test cases, 191 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
+209 test cases, 209 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
 
 **Correct:** HR-style columns; value-based email, phone, percentage, date, time, currency, flags; ranking and exclusions; all 7 problem types on synthetic data; override precedence; goal feasibility; quality severities; profile adapter.
 
@@ -128,7 +128,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 - Business objective and final target for the HR data: must come from the project owner.
 - Quality penalty values above are a proposal and still need Meshak's agreement. Vinitha confirmed the rule IDs, the Warning/Blocking meaning and that null findings are notes only. Real quality output for the HumanResources tables has not been received; her sample was for a different dataset (`hr_employee_attrition_data.csv`) and contained stray text ("[cite: 6]").
 - "Top suggestion" needs an outcome-like word in the column name; otherwise the user confirms the target.
-- Target-leakage checks not built (design only / pending integration; depends on profiling correlations).
+- Target-leakage checks are partial: numerical targets only, straight-line correlation only; thresholds are proposed defaults.
 - The profile-based report is an approximation; verified on 40 of 40 columns here, to be re-checked on other datasets.
 - A mistyped dataset name in the quality tool returns an empty table without a warning.
 
@@ -140,6 +140,6 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 | Quality and profiling integration | Implemented |
 | Single integrated entry point (profile + quality + semantic + target + problem) | Implemented (done 27 Oct, ahead of the Wed 28 Oct plan) |
 | Handoff contract to AutoML (Sumanth) and preprocessing (Sinchana) | Draft revision 3 written (after Meshak's and Sumanth's reviews: feature columns, roles, target statistics, preprocessing hints, defined allowed values); fields still to be agreed with Sinchana, then shared for review before it is frozen |
-| Target-leakage checks | Design only / pending integration (needs profiling correlations) |
+| Target-leakage checks | Partly implemented: correlation-based flags for numerical targets (see limits) |
 | Final target for HR data | Not needed for the application (the user supplies goal and overrides at run time). The HR demo objective needs project-owner confirmation; `VacationHours` has been discussed as a possible target only |
 | Code submission method | Blocked (no Git; needs Meshak) |
