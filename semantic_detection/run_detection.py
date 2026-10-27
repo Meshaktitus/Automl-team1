@@ -13,8 +13,10 @@ ranked target suggestions -> problem-type recommendation, per dataset.
 Each result (one per dataset) has: dataset, target, target_source
 (user_override / top_suggestion / none), problem_type, confidence, source,
 needs_confirmation, evidence, alternatives, warnings, candidates (ranked),
-semantic_columns, dataset_characteristics, feature_columns, column_roles,
-leakage_checks, status. Everything is a recommendation with evidence; nothing
+semantic_columns, dataset_characteristics, target_confirmed,
+target_statistics, feature_columns, recommended_feature_columns,
+approved_feature_columns, features_status, column_roles, leakage_checks,
+status. Everything is a recommendation with evidence; nothing
 is final until the user confirms.
 
 For one dataset per call use detect_dataset(profile, ...), which returns a
@@ -46,6 +48,14 @@ from quality_integration import (
     apply_quality_to_suggestions,
     issues_by_column,
     load_quality_report,
+)
+from handoff_details import (
+    feature_type_counts,
+    missing_summary,
+    preprocessing_hint,
+    target_statistics,
+    time_info,
+    validation_warnings,
 )
 from semantic_rules import tokenize
 from target_suggestions import suggest_targets
@@ -83,7 +93,8 @@ LEAKAGE_CHECKS = {
 NOT_FEATURE_TYPES = {"identifier", "email", "phone"}
 
 
-def build_column_roles(group, target, time_columns, quality_by_column):
+def build_column_roles(group, target, time_columns, quality_by_column,
+                       problem_type=None):
     """Recommend a role for every column, each with a reason.
 
     Roles: target, feature, identifier, date, time, text, excluded.
@@ -98,9 +109,15 @@ def build_column_roles(group, target, time_columns, quality_by_column):
         missing = float(row.get("missing_pct") or 0)
         entry = {
             "column": column, "semantic_type": kind,
+            "data_type": str(row.get("data_type") or ""),
+            "unique_values": None if pd.isna(unique) else int(unique),
+            "missing_count": int(
+                (row.get("row_count") or 0) - (row.get("non_null_count") or 0)),
+            "missing_pct": missing,
             "sensitive": bool(row.get("sensitive")),
+            "needs_privacy_review": bool(row.get("sensitive")),
             "time_axis": False, "quality_blocked": False,
-            "quality_issues": [],
+            "quality_issues": [], "quality_issue_codes": [],
         }
         if column == target:
             role, reason = "target", "Suggested or chosen target column."
@@ -139,25 +156,34 @@ def build_column_roles(group, target, time_columns, quality_by_column):
         issues = quality_by_column.get(column, [])
         entry["quality_issues"] = [
             f"{i['rule_id']} ({i['label'].lower()})" for i in issues]
+        entry["quality_issue_codes"] = sorted({i["rule_id"] for i in issues})
         penalising = _penalised(issues)
         if penalising and _worst(penalising) == "blocking":
             entry["quality_blocked"] = True
             reason += " Blocking quality issue reported; review before use."
         entry["role"], entry["reason"] = role, reason
+        entry["preprocessing_hint"] = preprocessing_hint(
+            role, kind, None if pd.isna(unique) else unique, missing,
+            entry["time_axis"], problem_type)
         roles.append(entry)
     return roles
 
 
 def run_detection(profiles, quality=None, goal=None, overrides=None,
                   problem_type_override=None, quality_dataset=None,
-                  quality_settings=None):
+                  quality_settings=None, approved_features=None):
+    """approved_features: optional {dataset: [columns]} (or a plain list when
+    there is one dataset) that the user has approved for training."""
     rows = []
     characteristics = {}
+    profile_columns = {}
     for profile in profiles:
         loaded = load_profile(profile)
         part = analyze_profile(loaded)
         rows.extend(part)
         info = loaded["dataset"]
+        profile_columns[part[0]["dataset"]] = {
+            c["name"]: c for c in loaded["columns"]}
         characteristics[part[0]["dataset"]] = {
             "row_count": info["row_count"],
             "column_count": info["column_count"],
@@ -227,11 +253,34 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         quality_by_column = (
             issues_by_column(routed, dataset) if routed is not None else {})
         roles = build_column_roles(
-            dataset_rows, target, time_cols, quality_by_column)
+            dataset_rows, target, time_cols, quality_by_column,
+            problem["problem_type"])
         feature_names = [r["column"] for r in roles if r["role"] == "feature"]
+        recommended = [r["column"] for r in roles
+                       if r["role"] == "feature" and not r["quality_blocked"]]
+        approved = None
+        if approved_features is not None:
+            given = approved_features.get(dataset) \
+                if isinstance(approved_features, dict) else (
+                    approved_features if len(datasets) == 1 else None)
+            if given is not None:
+                approved = [c for c in given if c in feature_names]
+                rejected = [c for c in given if c not in feature_names]
+                if rejected:
+                    warnings.append(
+                        "Approved columns that are not usable features: "
+                        + ", ".join(rejected))
+        pcols = profile_columns[dataset]
+        target_stats = target_statistics(
+            pcols.get(target) if target else None,
+            next((r["semantic_type"] for r in roles if r["column"] == target),
+                 None), problem["problem_type"])
         facts = dict(characteristics[dataset])
         facts.update({
             "feature_column_count": len(feature_names),
+            "feature_type_counts": feature_type_counts(roles),
+            "missing_summary": missing_summary(roles),
+            "time_info": time_info(pcols, time_cols),
             "time_columns": time_cols,
             "identifier_columns": [
                 r["column"] for r in roles if r["role"] == "identifier"],
@@ -242,6 +291,19 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "excluded_columns": [
                 r["column"] for r in roles if r["role"] == "excluded"],
         })
+        facts["validation_warnings"] = validation_warnings(
+            facts, roles, target_stats, problem["problem_type"])
+
+        candidate_list = json.loads(candidates.to_json(orient="records"))
+        for c in candidate_list:
+            found = quality_by_column.get(c["candidate_target"], [])
+            c["quality_issue_codes"] = sorted({i["rule_id"] for i in found})
+            reasons = [
+                f"{i['rule_id']}: {i['description']}".strip(": ")
+                for i in _penalised(found) if i["severity"] == "blocking"]
+            c["blocking_reason"] = (
+                "; ".join(reasons)
+                if c["priority"] == "Blocked by quality" and reasons else None)
 
         results.append({
             "dataset": dataset,
@@ -254,11 +316,17 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "evidence": problem["evidence"],
             "alternatives": problem["alternatives"],
             "warnings": warnings,
-            "candidates": json.loads(candidates.to_json(orient="records")),
+            "target_confirmed": target_source == "user_override",
+            "target_statistics": target_stats,
+            "candidates": candidate_list,
             "semantic_columns": json.loads(
                 columns.to_json(orient="records")),
             "dataset_characteristics": facts,
             "feature_columns": feature_names,
+            "recommended_feature_columns": recommended,
+            "approved_feature_columns": approved,
+            "features_status": ("approved" if approved is not None
+                                else "recommended_pending_confirmation"),
             "column_roles": roles,
             "leakage_checks": dict(LEAKAGE_CHECKS),
             "status": STATUS,
@@ -270,8 +338,12 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "source": "data_rules", "needs_confirmation": True,
             "evidence": [], "alternatives": [],
             "warnings": [f"Dataset '{name}' not found in the profiles"],
+            "target_confirmed": False, "target_statistics": None,
             "candidates": [], "semantic_columns": [],
             "dataset_characteristics": {}, "feature_columns": [],
+            "recommended_feature_columns": [],
+            "approved_feature_columns": None,
+            "features_status": "recommended_pending_confirmation",
             "column_roles": [], "leakage_checks": dict(LEAKAGE_CHECKS),
             "status": STATUS,
         })

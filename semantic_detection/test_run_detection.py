@@ -139,7 +139,9 @@ def test_result_is_json_serialisable_and_has_the_agreed_fields():
         "source", "needs_confirmation", "evidence", "alternatives",
         "warnings", "candidates", "semantic_columns",
         "dataset_characteristics", "feature_columns", "column_roles",
-        "leakage_checks", "status",
+        "leakage_checks", "status", "target_confirmed", "target_statistics",
+        "recommended_feature_columns", "approved_feature_columns",
+        "features_status",
     }
 
 
@@ -247,3 +249,104 @@ def test_unknown_quality_setting_is_rejected():
     with pytest.raises(ValueError):
         run_detection([churn_profile()], quality=quality,
                       quality_settings={"score_factor": {"huge": 1}})
+
+
+def test_target_confirmed_only_for_a_user_choice():
+    assert run_detection([churn_profile()])[0]["target_confirmed"] is False
+    chosen = run_detection(
+        [churn_profile()], overrides={"churn.xlsx": "churn"})[0]
+    assert chosen["target_confirmed"] is True
+
+
+def test_recommended_approved_and_status():
+    result = run_detection([churn_profile()])[0]
+    assert result["features_status"] == "recommended_pending_confirmation"
+    assert result["approved_feature_columns"] is None
+    assert "churn" not in result["recommended_feature_columns"]
+    assert "customer_id" not in result["recommended_feature_columns"]
+    approved = run_detection(
+        [churn_profile()], approved_features=["tenure_months"])[0]
+    assert approved["features_status"] == "approved"
+    assert approved["approved_feature_columns"] == ["tenure_months"]
+    bad = run_detection([churn_profile()],
+                        approved_features=["customer_id"])[0]
+    assert bad["approved_feature_columns"] == []
+    assert "not usable features" in " ".join(bad["warnings"])
+
+
+def test_blocked_features_are_not_recommended_but_still_usable():
+    quality = {"dataset": "churn.xlsx", "issues": [
+        {"rule_id": "INVALID_RANGE", "severity": "Blocking",
+         "affected_column": "tenure_months", "affected_rows": 2,
+         "description": "negative tenure"}]}
+    result = run_detection([churn_profile()], quality=quality)[0]
+    assert "tenure_months" in result["feature_columns"]
+    assert "tenure_months" not in result["recommended_feature_columns"]
+    assert any("blocking quality" in w for w in
+               result["dataset_characteristics"]["validation_warnings"])
+
+
+def test_candidates_carry_issue_codes_and_blocking_reason():
+    quality = {"dataset": "churn.xlsx", "issues": [
+        {"rule_id": "INVALID_RANGE", "severity": "Blocking",
+         "affected_column": "monthly_charges", "affected_rows": 2,
+         "description": "negative charge"}]}
+    result = run_detection([churn_profile()], quality=quality)[0]
+    cand = {c["candidate_target"]: c for c in result["candidates"]}
+    assert cand["monthly_charges"]["quality_issue_codes"] == [
+        "INVALID_RANGE"]
+    assert "negative charge" in cand["monthly_charges"]["blocking_reason"]
+    assert cand["churn"]["blocking_reason"] is None
+
+
+def test_target_statistics_for_a_binary_target():
+    result = run_detection([churn_profile()])[0]
+    stats = result["target_statistics"]
+    assert stats["column"] == "churn"
+    assert stats["unique_count"] == 2
+    assert stats["missing_pct"] == 0.0
+    assert stats["data_type"] == "int64"
+
+
+def test_no_target_means_no_target_statistics():
+    anon = profile([col(f"col{i}", "numerical", "float64", unique=90,
+                        summary=NUM) for i in range(1, 5)], name="anon.xlsx")
+    assert run_detection([anon])[0]["target_statistics"] is None
+
+
+def test_role_entries_have_types_hints_and_privacy_flag():
+    result = run_detection([churn_profile()])[0]
+    for entry in result["column_roles"]:
+        assert entry["preprocessing_hint"]
+        assert "data_type" in entry and "needs_privacy_review" in entry
+        assert "quality_issue_codes" in entry
+    assert roles(result)["customer_id"]["preprocessing_hint"].startswith(
+        "Do not use")
+
+
+def test_feature_type_counts_and_missing_summary_in_characteristics():
+    prof = profile([
+        col("a", "numerical", unique=40, missing=5, pct=5.0, summary=NUM),
+        col("b", "numerical", "float64", unique=50, summary=NUM),
+        col("c", "categorical", "str", unique=3, top=[
+            {"value": "x", "count": 50, "percentage": 50.0},
+            {"value": "y", "count": 30, "percentage": 30.0},
+            {"value": "z", "count": 20, "percentage": 20.0}]),
+        col("label", "numerical", unique=2, summary={"min": 0.0, "max": 1.0,
+                                                    "mean": 0.5}),
+    ], name="m.xlsx")
+    facts = run_detection([prof], overrides={"m.xlsx": "label"})[0][
+        "dataset_characteristics"]
+    assert facts["feature_type_counts"]["categorical"] == 1
+    assert facts["feature_type_counts"]["numerical"] == 2
+    assert facts["missing_summary"] == [
+        {"column": "a", "missing_count": 5, "missing_pct": 5.0}]
+
+
+def test_time_info_for_forecasting_data():
+    result = run_detection([sales_profile()])[0]
+    info = result["dataset_characteristics"]["time_info"]
+    assert info[0]["column"] == "order_date"
+    assert info[0]["start"].startswith("2023-01-01")
+    assert info[0]["estimated_frequency"] == "daily"
+    assert "Not available" in info[0]["gaps"]

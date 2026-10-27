@@ -1,101 +1,146 @@
-# Handoff contract: target, problem type and input columns (1.0-draft, revision 2)
+# Handoff contract: target, problem type and input columns (1.0-draft, revision 3)
 
 Owner: Samarth. Consumers: Sumanth (AutoML, primary), Sinchana (preprocessing). Reviewer: Meshak.
-Status: **implemented and tested as a prototype; proposed, pending Team 1 review.** The exact fields are **to be agreed with Sumanth and Sinchana**. This document is not final until they and Meshak have reviewed it. Please share any change to a field before it is treated as final.
+Status: **implemented and tested as a prototype; proposed, pending Team 1 review.** Revision 3 follows Sumanth's review of revision 2. Fields marked *optional* may be left out or filled later. **The interface is not frozen** until Sinchana and the reviewer have agreed it.
 
-## Changes since the first draft (after Meshak's review, 27 Oct)
-1. Added `feature_columns`, `column_roles` and `dataset_characteristics`, so Sumanth and Sinchana get the input columns, identifiers, date columns and dataset facts, each with a reason.
-2. Added `leakage_checks`, which says plainly that leakage checks are **not run** yet.
-3. Added `detect_dataset(...)` for one dataset per call (a technical choice, not an SRS requirement).
-4. Quality penalties are now settings you can change (`quality_settings`). The defaults are proposals, not approved.
+## Changes since revision 2 (after Sumanth's review)
+1. Added `target_statistics` (data type, unique count, missing information, class distribution or numerical statistics).
+2. Added `target_confirmed`, and split the input columns into `feature_columns` (technically usable), `recommended_feature_columns` and `approved_feature_columns`, with `features_status`.
+3. Added to each column role: `data_type`, `unique_values`, `missing_count`, `missing_pct`, `preprocessing_hint`, `needs_privacy_review`, `quality_issue_codes`.
+4. Added to each candidate: `quality_issue_codes` and `blocking_reason`.
+5. Added to `dataset_characteristics`: `feature_type_counts`, `missing_summary`, `time_info` (date range and estimated frequency) and `validation_warnings`.
+6. Defined all allowed values, how `score` works, and the difference between score and confidence (sections 3 and 4).
 
 ## 1. How it is called
 
 ```python
 from run_detection import run_detection, detect_dataset
 
-# one dataset per call
-result = detect_dataset(
+result = detect_dataset(            # one dataset per call
     "Employee.profile.json",        # profiling response (path or dict), contract 1.0-draft
     quality=None,                   # optional quality report (path or dict)
     goal=None,                      # optional business goal in plain words
     overrides=None,                 # optional {dataset_name: target_column} chosen by the user
     problem_type_override=None,     # optional problem type chosen by the user
+    approved_features=None,         # optional columns the user approved for training
     quality_settings=None,          # optional, change the proposed quality penalties
 )
-
-# several datasets at once: run_detection([...]) returns a list of the same results
+# run_detection([...]) takes several profiles and returns a list of the same results
 ```
 
-Command line: `python run_detection.py --profiles <folder> [--quality file.json] [--goal "..."] [--override DATASET=COLUMN] [--problem-type TYPE]`.
+Command line: `python run_detection.py --profiles <folder> [--quality file.json] [--goal "..."] [--override DATASET=COLUMN] [--problem-type TYPE]`. Only the profiling output is read, never the raw data. Nothing is specific to one domain.
 
-Only the profiling output is read, never the raw data. Nothing is specific to one domain.
+## 2. Result fields
 
-## 2. Result fields (always all present)
+**Core** (always present):
 
 | Field | Type | Meaning |
 |---|---|---|
 | `dataset` | string | Dataset name from the profile |
 | `target` | string or null | Suggested or chosen target. null when none can be suggested |
-| `target_source` | `user_override` / `top_suggestion` / `none` | Who chose it |
-| `problem_type` | string | One of the 7 types below, or `review_required` |
-| `confidence` | number 0 to 1 | 1.0 only for a user override; otherwise at most 0.95 |
-| `source` | `user_override` / `business_goal` / `data_rules` | What decided the problem type |
+| `target_source` | enum | `user_override`, `top_suggestion` or `none` |
+| `target_confirmed` | boolean | true only when the user chose the target. A suggested target is **not** confirmed |
+| `problem_type` | enum | See section 3 |
+| `confidence` | number 0 to 1 | Confidence in the **problem type** (not the target score). 1.0 only for a user override; otherwise at most 0.95 |
+| `source` | enum | What decided the problem type: `user_override`, `business_goal` or `data_rules` |
 | `needs_confirmation` | boolean | true = a human must confirm before training |
 | `evidence` | list of text | Why this problem type |
 | `alternatives` | list of `{problem_type, reason}` | Other types worth considering |
 | `warnings` | list of text | Anything the consumer should show or act on |
-| `candidates` | list (up to 5) | Ranked target candidates (section 3) |
-| `feature_columns` | list of column names | Recommended input columns (role `feature`) |
-| `column_roles` | list | A recommended role and reason for every column (section 4) |
-| `dataset_characteristics` | object | Dataset facts (section 5) |
-| `leakage_checks` | object | `status` and `reason`. Currently `pending_integration` |
+| `candidates` | list (up to 5) | Ranked target candidates (section 4) |
+| `feature_columns` | list | All technically usable input columns (role `feature`), including ones with a blocking quality issue |
+| `recommended_feature_columns` | list | `feature_columns` minus columns with a blocking quality issue |
+| `approved_feature_columns` | list or null | Columns the user approved for training. null until the user approves |
+| `features_status` | enum | `recommended_pending_confirmation` or `approved` |
+| `column_roles` | list | A recommended role and reason for every column (section 5) |
+| `dataset_characteristics` | object | Dataset facts (section 6) |
+| `leakage_checks` | object | `status` and `reason`. Currently `pending_integration`: **not run** |
 | `semantic_columns` | list | `column, semantic_type, confidence, sensitive` for every column |
-| `status` | text | Always "Proposed, pending verification" |
+| `status` | text | Always `Proposed, pending verification` (the only value in this version) |
 
-Problem types: `binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required` (nothing can be recommended yet).
+**Optional / task-dependent:** `target_statistics` (null when there is no target), and inside `dataset_characteristics`: `feature_type_counts`, `missing_summary`, `time_info`, `validation_warnings`; and `preprocessing_hint` in each role.
 
-## 3. Candidate fields
+**Which columns does AutoML train on?** `feature_columns` is what is technically possible. `recommended_feature_columns` is what the module suggests. `approved_feature_columns` is what the user has confirmed. While `features_status` is `recommended_pending_confirmation`, use the recommended list only as a proposal. The suggested target is also not confirmed until `target_confirmed` is true.
 
-`rank, candidate_target, semantic_type, suggested_problem_type, score (0-100), confidence_level (High / Medium / Low / User-selected), priority, warnings`, and `quality_issues` when a quality report was given. `priority` values: `User-selected`, `Top suggestion` (only when the column name looks like an outcome), `Alternative`, `Candidate`, `Blocked by quality`.
+## 3. Allowed values
 
-## 4. Column roles (for Sumanth and Sinchana)
-
-Each entry in `column_roles`: `column, semantic_type, role, reason, sensitive, time_axis, quality_blocked, quality_issues`.
-
-| Role | Meaning |
+| Field | Values |
 |---|---|
-| `target` | The suggested or chosen target |
-| `feature` | Recommended model input |
-| `identifier` | ID, key, email or phone; useful for joining tables, not as a model input |
-| `date` | Date column. `time_axis` is true when it can order the data in time (forecasting); otherwise it describes a person or record and can be turned into age or duration |
-| `time` | Time-of-day column |
-| `text` | Free text; needs text processing |
-| `excluded` | Audit metadata, constant, almost empty (80% or more missing) or unknown type |
+| `problem_type` | `binary_classification` (two outcomes), `multiclass_classification` (3 or more categories), `regression` (a number), `forecasting` (a number over time, needs a time column), `clustering` (no target; group similar rows), `anomaly_detection` (find unusual rows), `recommendation` (user and item with a rating), `review_required` (nothing can be recommended yet) |
+| `source` | `user_override` (the user chose it; always wins), `business_goal` (words in the goal, accepted only if the data fits), `data_rules` (from the target column and data) |
+| `target_source` | `user_override`, `top_suggestion` (a column whose name looks like an outcome), `none` |
+| `status` | `Proposed, pending verification` |
+| `semantic_type` | identifier, email, phone, percentage, date, time, boolean_flag, categorical, financial_amount, numerical_measure, text, unknown |
 
-These are **recommendations with the reason attached, not irreversible decisions.** The user can change them. `quality_blocked` is true when the quality report has a Blocking issue on that column that is not a null, duplicate-row or key finding.
+## 4. Candidates
 
-## 5. Dataset characteristics
+Fields: `rank, candidate_target, semantic_type, suggested_problem_type, score, confidence_level, priority, warnings, quality_issues, quality_issue_codes, blocking_reason`.
 
-`row_count, column_count, duplicate_row_count, profile_status, feature_column_count, time_columns, identifier_columns, date_columns, sensitive_columns, excluded_columns`. More facts can be added once Sumanth says what AutoML needs.
+| Field | Values and meaning |
+|---|---|
+| `priority` | `User-selected`, `Top suggestion` (name looks like an outcome), `Alternative` (up to 3 more outcome-like names), `Candidate`, `Blocked by quality` |
+| `confidence_level` | `High`, `Medium`, `Low`, `User-selected` |
+| `suggested_problem_type` | `binary_classification`, `multiclass_classification`, `regression`, `review_required` (the type implied by this column alone) |
+| `quality_issue_codes` | List of rule IDs reported for this column, for example `["INVALID_RANGE"]` |
+| `blocking_reason` | Text such as `INVALID_RANGE: negative charge` when `priority` is `Blocked by quality`; otherwise null |
 
-## 6. Rules for the consumer (proposed)
+**How `score` (0 to 100) is calculated:** `base(type) x cardinality factor x (1 - missing share) x sensitivity factor`, then +0.15 if the name looks like an outcome and +0.05 if it is the last column, and the result is scaled to 100.
+- Base: boolean_flag 0.80, financial_amount 0.75, categorical, numerical_measure and percentage 0.70.
+- Cardinality (classification): 2 values 1.0, up to 10 0.9, up to 20 0.65, more 0.35. Regression: up to 5 values 0.5, up to 10 0.75, more 1.0.
+- Sensitive column: x0.5.
+- Quality: Medium x0.85, High x0.6, Blocking x0 (proposed defaults, configurable; not in the SRS).
 
-1. If `needs_confirmation` is true, do not start training automatically. Show the target, problem type, evidence and alternatives to the user.
-2. If `target_source` or `source` is `user_override`, follow it. The user's choice always wins.
-3. If `target` is null or `problem_type` is `review_required`, ask the user for the business objective and target. This is the normal result for data with no clear outcome.
-4. Do not use a candidate with priority `Blocked by quality`, or a column with `quality_blocked` true, without the user's say-so.
-5. Show `warnings` and `leakage_checks.status` to the user. Do not treat leakage as checked while the status is `pending_integration`.
-6. Sensitive columns need a fairness and privacy review.
+**Score is not confidence.** `score` ranks the *target candidates* against each other. `confidence_level` says how much to trust a candidate (High needs a score of at least 75 and an outcome-like name; Medium at least 50; otherwise Low). `confidence` at the top level is about the **problem type**. A high score does not mean the target is confirmed.
 
-## 7. Examples (real outputs of the prototype, shortened)
+## 5. Column roles
 
-**A. Clear outcome, needs confirmation** (customer churn).
+Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_count, missing_pct, sensitive, needs_privacy_review, time_axis, quality_blocked, quality_issues, quality_issue_codes, preprocessing_hint`.
+
+| Role | Meaning | Use as a normal model input? |
+|---|---|---|
+| `target` | The suggested or chosen target | **No** |
+| `feature` | Recommended model input | Yes |
+| `identifier` | ID, key, email or phone | **No** (keep for joining tables) |
+| `date` | Date column | Not directly; see below |
+| `time` | Time-of-day column | After extracting hour or part of day |
+| `text` | Free text | After text processing |
+| `excluded` | Audit metadata, constant, almost empty (80% or more missing) or unknown type | **No** |
+
+**Dates.** `time_axis` true: the date can order the data in time, so it is the time index for **forecasting** (and the source of lag features). `time_axis` false: the date describes a person or record (birth date, hire date); for **feature engineering** turn it into age, duration, year or month. Birth, hire, start, end and audit dates are never a time axis.
+
+**`preprocessing_hint`** is a one-line recommendation (impute, encode, scale, date transformation, text processing or drop). It is a suggestion for Sinchana's step, not a decision.
+
+**Data quality is not target leakage.** `quality_issues`, `quality_issue_codes` and `quality_blocked` report data problems (for example an invalid range). `quality_blocked` is true only for a Blocking finding that is not a null, duplicate-row or key finding. Leakage means a column that gives away the target; it is reported separately in `leakage_checks` and is **not implemented yet**.
+
+**Sensitive columns** have `sensitive` and `needs_privacy_review` true. They need an explicit privacy and fairness review before use.
+
+## 6. Dataset characteristics and target statistics
+
+`dataset_characteristics`: `row_count, column_count, duplicate_row_count, profile_status, feature_column_count, feature_type_counts` (numerical, categorical, boolean, other), `missing_summary` (columns with missing values), `time_columns, time_info, identifier_columns, date_columns, sensitive_columns, excluded_columns, validation_warnings`.
+
+- `time_info` (when there is a time axis): `column, start, end, distinct_dates, estimated_frequency` (daily, weekly, monthly, quarterly, yearly or unknown), `average_spacing_days`, and `gaps`. **Frequency is an estimate from the date range. Gaps cannot be found from the profile**; the field says so.
+- `validation_warnings`: no or few usable features, small dataset (under 50 rows), duplicate rows, target with missing values, class imbalance (smallest class under 10%), high-cardinality features (over 50 distinct values), features with blocking quality issues.
+
+`target_statistics`: `column, data_type, semantic_type, unique_count, missing_count, missing_pct, class_distribution, minority_class_pct, numerical_statistics, notes`. Class distribution comes from the profile's top values, or from the mean of a 0/1 column; when the profile lists only the top values, the notes say so and `minority_class_pct` stays null. Numerical statistics are min, max, mean, median and std.
+
+## 7. Rules for the consumer (proposed)
+
+1. If `needs_confirmation` is true or `target_confirmed` is false, do not start training automatically. Show the target, problem type, evidence and alternatives to the user.
+2. If `target_source` or `source` is `user_override`, follow it.
+3. If `target` is null or `problem_type` is `review_required`, ask the user for the business objective and target.
+4. Train on `approved_feature_columns` when it is not null. Otherwise treat `recommended_feature_columns` as a proposal.
+5. Never use identifiers, excluded columns or the target as normal model inputs.
+6. Do not use a candidate with priority `Blocked by quality`, or a column with `quality_blocked` true, without the user's say-so.
+7. Show `warnings`, `validation_warnings` and `leakage_checks.status`. Do not treat leakage as checked while the status is `pending_integration`.
+
+## 8. Examples (real outputs of the prototype, shortened)
+
+**A. The user picked the target** (customer churn; `target_confirmed` true).
 ```json
 {
   "dataset": "churn.xlsx",
   "target": "churn",
-  "target_source": "top_suggestion",
+  "target_source": "user_override",
   "problem_type": "binary_classification",
   "confidence": 0.85,
   "source": "data_rules",
@@ -105,6 +150,21 @@ These are **recommendations with the reason attached, not irreversible decisions
   ],
   "alternatives": [],
   "warnings": [],
+  "target_confirmed": true,
+  "target_statistics": {
+    "column": "churn",
+    "data_type": "int64",
+    "semantic_type": "boolean_flag",
+    "unique_count": 2,
+    "missing_count": 0,
+    "missing_pct": 0.0,
+    "class_distribution": null,
+    "minority_class_pct": null,
+    "numerical_statistics": null,
+    "notes": [
+      "Class distribution not available from the profile."
+    ]
+  },
   "candidates": [
     {
       "rank": 1,
@@ -112,9 +172,11 @@ These are **recommendations with the reason attached, not irreversible decisions
       "semantic_type": "boolean_flag",
       "suggested_problem_type": "binary_classification",
       "score": 100.0,
-      "confidence_level": "High",
-      "priority": "Top suggestion",
-      "warnings": "Check class balance before training"
+      "confidence_level": "User-selected",
+      "priority": "User-selected",
+      "warnings": "Check class balance before training",
+      "quality_issue_codes": [],
+      "blocking_reason": null
     },
     {
       "rank": 2,
@@ -124,7 +186,9 @@ These are **recommendations with the reason attached, not irreversible decisions
       "score": 70.0,
       "confidence_level": "Low",
       "priority": "Candidate",
-      "warnings": ""
+      "warnings": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
     }
   ],
   "dataset_characteristics": {
@@ -133,58 +197,84 @@ These are **recommendations with the reason attached, not irreversible decisions
     "duplicate_row_count": 0,
     "profile_status": "success",
     "feature_column_count": 2,
+    "feature_type_counts": {
+      "numerical": 2,
+      "categorical": 0,
+      "boolean": 0,
+      "other": 0
+    },
+    "missing_summary": [],
+    "time_info": [],
     "time_columns": [],
     "identifier_columns": [
       "customer_id"
     ],
     "date_columns": [],
     "sensitive_columns": [],
-    "excluded_columns": []
+    "excluded_columns": [],
+    "validation_warnings": []
   },
   "feature_columns": [
     "monthly_charges",
     "tenure_months"
   ],
+  "recommended_feature_columns": [
+    "monthly_charges",
+    "tenure_months"
+  ],
+  "approved_feature_columns": null,
+  "features_status": "recommended_pending_confirmation",
   "column_roles": [
     {
       "column": "customer_id",
       "semantic_type": "identifier",
+      "data_type": "int64",
+      "unique_values": 100,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
     },
     {
       "column": "monthly_charges",
       "semantic_type": "numerical_measure",
+      "data_type": "float64",
+      "unique_values": 95,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "feature",
-      "reason": "numerical_measure column usable as a model input."
+      "reason": "numerical_measure column usable as a model input.",
+      "preprocessing_hint": "Scale if the model needs it."
     },
     {
       "column": "tenure_months",
       "semantic_type": "numerical_measure",
+      "data_type": "int64",
+      "unique_values": 60,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "feature",
-      "reason": "numerical_measure column usable as a model input."
-    },
-    {
-      "column": "churn",
-      "semantic_type": "boolean_flag",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "target",
-      "reason": "Suggested or chosen target column."
+      "reason": "numerical_measure column usable as a model input.",
+      "preprocessing_hint": "Scale if the model needs it."
     }
   ],
   "leakage_checks": {
@@ -195,7 +285,7 @@ These are **recommendations with the reason attached, not irreversible decisions
 }
 ```
 
-**B. Goal fits the data** (sales data, goal "Forecast revenue next month").
+**B. Forecasting** (sales data, goal "Forecast revenue next month"), with `time_info`.
 ```json
 {
   "dataset": "sales.xlsx",
@@ -216,6 +306,19 @@ These are **recommendations with the reason attached, not irreversible decisions
     }
   ],
   "warnings": [],
+  "target_confirmed": false,
+  "target_statistics": {
+    "column": "revenue",
+    "data_type": "float64",
+    "semantic_type": "financial_amount",
+    "unique_count": 99,
+    "missing_count": 0,
+    "missing_pct": 0.0,
+    "class_distribution": null,
+    "minority_class_pct": null,
+    "numerical_statistics": null,
+    "notes": []
+  },
   "candidates": [
     {
       "rank": 1,
@@ -225,7 +328,9 @@ These are **recommendations with the reason attached, not irreversible decisions
       "score": 95.0,
       "confidence_level": "High",
       "priority": "Top suggestion",
-      "warnings": ""
+      "warnings": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
     },
     {
       "rank": 2,
@@ -235,7 +340,9 @@ These are **recommendations with the reason attached, not irreversible decisions
       "score": 85.0,
       "confidence_level": "High",
       "priority": "Alternative",
-      "warnings": ""
+      "warnings": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
     }
   ],
   "dataset_characteristics": {
@@ -244,6 +351,24 @@ These are **recommendations with the reason attached, not irreversible decisions
     "duplicate_row_count": 0,
     "profile_status": "success",
     "feature_column_count": 1,
+    "feature_type_counts": {
+      "numerical": 1,
+      "categorical": 0,
+      "boolean": 0,
+      "other": 0
+    },
+    "missing_summary": [],
+    "time_info": [
+      {
+        "column": "order_date",
+        "start": "2023-01-01 00:00:00",
+        "end": "2023-04-10 00:00:00",
+        "distinct_dates": 100,
+        "estimated_frequency": "daily",
+        "gaps": "Not available from the profile (needs the values).",
+        "average_spacing_days": 1.0
+      }
+    ],
     "time_columns": [
       "order_date"
     ],
@@ -252,41 +377,70 @@ These are **recommendations with the reason attached, not irreversible decisions
       "order_date"
     ],
     "sensitive_columns": [],
-    "excluded_columns": []
+    "excluded_columns": [],
+    "validation_warnings": [
+      "Only 1 usable feature column."
+    ]
   },
   "feature_columns": [
     "units_sold"
   ],
+  "recommended_feature_columns": [
+    "units_sold"
+  ],
+  "approved_feature_columns": null,
+  "features_status": "recommended_pending_confirmation",
   "column_roles": [
     {
       "column": "order_date",
       "semantic_type": "date",
+      "data_type": "datetime64[us]",
+      "unique_values": 100,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": true,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "date",
-      "reason": "Date column that can act as a time axis."
+      "reason": "Date column that can act as a time axis.",
+      "preprocessing_hint": "Use as the time index for forecasting; derive lag features."
     },
     {
       "column": "units_sold",
       "semantic_type": "numerical_measure",
+      "data_type": "int64",
+      "unique_values": 80,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "feature",
-      "reason": "numerical_measure column usable as a model input."
+      "reason": "numerical_measure column usable as a model input.",
+      "preprocessing_hint": "Scale if the model needs it."
     },
     {
       "column": "revenue",
       "semantic_type": "financial_amount",
+      "data_type": "float64",
+      "unique_values": 99,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "target",
-      "reason": "Suggested or chosen target column."
+      "reason": "Suggested or chosen target column.",
+      "preprocessing_hint": "Target: use as the value to predict; check for outliers."
     }
   ],
   "leakage_checks": {
@@ -297,7 +451,162 @@ These are **recommendations with the reason attached, not irreversible decisions
 }
 ```
 
-**C. No clear outcome** (HR Employee data, nothing chosen).
+**C. Quality issue** (a Blocking range problem on `monthly_charges`; shows `blocking_reason`).
+```json
+{
+  "dataset": "churn.xlsx",
+  "target": "churn",
+  "target_source": "top_suggestion",
+  "problem_type": "binary_classification",
+  "confidence": 0.85,
+  "source": "data_rules",
+  "needs_confirmation": true,
+  "evidence": [
+    "Target 'churn' is boolean_flag with 2 distinct values."
+  ],
+  "alternatives": [],
+  "warnings": [],
+  "target_confirmed": false,
+  "target_statistics": {
+    "column": "churn",
+    "data_type": "int64",
+    "semantic_type": "boolean_flag",
+    "unique_count": 2,
+    "missing_count": 0,
+    "missing_pct": 0.0,
+    "class_distribution": null,
+    "minority_class_pct": null,
+    "numerical_statistics": null,
+    "notes": [
+      "Class distribution not available from the profile."
+    ]
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate_target": "churn",
+      "semantic_type": "boolean_flag",
+      "suggested_problem_type": "binary_classification",
+      "score": 100.0,
+      "confidence_level": "High",
+      "priority": "Top suggestion",
+      "warnings": "Check class balance before training",
+      "quality_issues": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
+    },
+    {
+      "rank": 2,
+      "candidate_target": "tenure_months",
+      "semantic_type": "numerical_measure",
+      "suggested_problem_type": "regression",
+      "score": 70.0,
+      "confidence_level": "Low",
+      "priority": "Candidate",
+      "warnings": "",
+      "quality_issues": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
+    },
+    {
+      "rank": 3,
+      "candidate_target": "monthly_charges",
+      "semantic_type": "numerical_measure",
+      "suggested_problem_type": "regression",
+      "score": 0.0,
+      "confidence_level": "Low",
+      "priority": "Blocked by quality",
+      "warnings": "INVALID_RANGE (blocking): negative charge [2 rows]",
+      "quality_issues": "INVALID_RANGE (blocking): negative charge [2 rows]",
+      "quality_issue_codes": [
+        "INVALID_RANGE"
+      ],
+      "blocking_reason": "INVALID_RANGE: negative charge"
+    }
+  ],
+  "dataset_characteristics": {
+    "row_count": 100,
+    "column_count": 4,
+    "duplicate_row_count": 0,
+    "profile_status": "success",
+    "feature_column_count": 2,
+    "feature_type_counts": {
+      "numerical": 2,
+      "categorical": 0,
+      "boolean": 0,
+      "other": 0
+    },
+    "missing_summary": [],
+    "time_info": [],
+    "time_columns": [],
+    "identifier_columns": [
+      "customer_id"
+    ],
+    "date_columns": [],
+    "sensitive_columns": [],
+    "excluded_columns": [],
+    "validation_warnings": [
+      "Some features have a blocking quality issue; review them."
+    ]
+  },
+  "feature_columns": [
+    "monthly_charges",
+    "tenure_months"
+  ],
+  "recommended_feature_columns": [
+    "tenure_months"
+  ],
+  "approved_feature_columns": null,
+  "features_status": "recommended_pending_confirmation",
+  "column_roles": [
+    {
+      "column": "customer_id",
+      "semantic_type": "identifier",
+      "data_type": "int64",
+      "unique_values": 100,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "identifier",
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
+    },
+    {
+      "column": "monthly_charges",
+      "semantic_type": "numerical_measure",
+      "data_type": "float64",
+      "unique_values": 95,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": true,
+      "quality_issues": [
+        "INVALID_RANGE (blocking)"
+      ],
+      "quality_issue_codes": [
+        "INVALID_RANGE"
+      ],
+      "role": "feature",
+      "reason": "numerical_measure column usable as a model input. Blocking quality issue reported; review before use.",
+      "preprocessing_hint": "Scale if the model needs it."
+    }
+  ],
+  "leakage_checks": {
+    "status": "pending_integration",
+    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
+  },
+  "status": "Proposed, pending verification"
+}
+```
+
+**D. No clear outcome** (HR Employee data, nothing chosen).
 ```json
 {
   "dataset": "HumanResources.Employee.xlsx",
@@ -319,6 +628,8 @@ These are **recommendations with the reason attached, not irreversible decisions
   "warnings": [
     "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
   ],
+  "target_confirmed": false,
+  "target_statistics": null,
   "candidates": [
     {
       "rank": 1,
@@ -328,7 +639,9 @@ These are **recommendations with the reason attached, not irreversible decisions
       "score": 80.0,
       "confidence_level": "Low",
       "priority": "Candidate",
-      "warnings": "Check class balance before training; No column clearly looks like an outcome; confirm the business objective"
+      "warnings": "Check class balance before training; No column clearly looks like an outcome; confirm the business objective",
+      "quality_issue_codes": [],
+      "blocking_reason": null
     },
     {
       "rank": 2,
@@ -338,17 +651,9 @@ These are **recommendations with the reason attached, not irreversible decisions
       "score": 70.0,
       "confidence_level": "Low",
       "priority": "Candidate",
-      "warnings": "No column clearly looks like an outcome; confirm the business objective"
-    },
-    {
-      "rank": 3,
-      "candidate_target": "SickLeaveHours",
-      "semantic_type": "numerical_measure",
-      "suggested_problem_type": "regression",
-      "score": 70.0,
-      "confidence_level": "Low",
-      "priority": "Candidate",
-      "warnings": "No column clearly looks like an outcome; confirm the business objective"
+      "warnings": "No column clearly looks like an outcome; confirm the business objective",
+      "quality_issue_codes": [],
+      "blocking_reason": null
     }
   ],
   "dataset_characteristics": {
@@ -357,6 +662,25 @@ These are **recommendations with the reason attached, not irreversible decisions
     "duplicate_row_count": 0,
     "profile_status": "warning",
     "feature_column_count": 7,
+    "feature_type_counts": {
+      "numerical": 2,
+      "categorical": 4,
+      "boolean": 1,
+      "other": 0
+    },
+    "missing_summary": [
+      {
+        "column": "OrganizationNode",
+        "missing_count": 1,
+        "missing_pct": 0.3
+      },
+      {
+        "column": "OrganizationLevel",
+        "missing_count": 1,
+        "missing_pct": 0.3
+      }
+    ],
+    "time_info": [],
     "time_columns": [],
     "identifier_columns": [
       "BusinessEntityID",
@@ -378,6 +702,9 @@ These are **recommendations with the reason attached, not irreversible decisions
       "CurrentFlag",
       "rowguid",
       "ModifiedDate"
+    ],
+    "validation_warnings": [
+      "Feature 'JobTitle' has 67 distinct values (high cardinality)."
     ]
   },
   "feature_columns": [
@@ -389,270 +716,68 @@ These are **recommendations with the reason attached, not irreversible decisions
     "VacationHours",
     "SickLeaveHours"
   ],
-  "column_roles": [
-    {
-      "column": "BusinessEntityID",
-      "semantic_type": "identifier",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
-    },
-    {
-      "column": "NationalIDNumber",
-      "semantic_type": "identifier",
-      "sensitive": true,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
-    },
-    {
-      "column": "LoginID",
-      "semantic_type": "identifier",
-      "sensitive": true,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
-    },
-    {
-      "column": "OrganizationNode",
-      "semantic_type": "text",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "text",
-      "reason": "Free text; needs text processing before use."
-    },
-    {
-      "column": "OrganizationLevel",
-      "semantic_type": "categorical",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "categorical column usable as a model input."
-    }
-  ],
-  "leakage_checks": {
-    "status": "pending_integration",
-    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
-  },
-  "status": "Proposed, pending verification"
-}
-```
-
-**D. User picks the target** (HR Employee data, user selects `VacationHours`; **illustration only, the HR demo objective is not confirmed**).
-```json
-{
-  "dataset": "HumanResources.Employee.xlsx",
-  "target": "VacationHours",
-  "target_source": "user_override",
-  "problem_type": "regression",
-  "confidence": 0.8,
-  "source": "data_rules",
-  "needs_confirmation": true,
-  "evidence": [
-    "Target 'VacationHours' is numerical_measure with 100 distinct values."
-  ],
-  "alternatives": [],
-  "warnings": [],
-  "candidates": [
-    {
-      "rank": 1,
-      "candidate_target": "VacationHours",
-      "semantic_type": "numerical_measure",
-      "suggested_problem_type": "regression",
-      "score": 70.0,
-      "confidence_level": "User-selected",
-      "priority": "User-selected",
-      "warnings": ""
-    },
-    {
-      "rank": 2,
-      "candidate_target": "SalariedFlag",
-      "semantic_type": "boolean_flag",
-      "suggested_problem_type": "binary_classification",
-      "score": 80.0,
-      "confidence_level": "Low",
-      "priority": "Candidate",
-      "warnings": "Check class balance before training; No column clearly looks like an outcome; confirm the business objective"
-    }
-  ],
-  "dataset_characteristics": {
-    "row_count": 290,
-    "column_count": 16,
-    "duplicate_row_count": 0,
-    "profile_status": "warning",
-    "feature_column_count": 6,
-    "time_columns": [],
-    "identifier_columns": [
-      "BusinessEntityID",
-      "NationalIDNumber",
-      "LoginID"
-    ],
-    "date_columns": [
-      "BirthDate",
-      "HireDate"
-    ],
-    "sensitive_columns": [
-      "NationalIDNumber",
-      "LoginID",
-      "BirthDate",
-      "MaritalStatus",
-      "Gender"
-    ],
-    "excluded_columns": [
-      "CurrentFlag",
-      "rowguid",
-      "ModifiedDate"
-    ]
-  },
-  "feature_columns": [
+  "recommended_feature_columns": [
     "OrganizationLevel",
     "JobTitle",
     "MaritalStatus",
     "Gender",
     "SalariedFlag",
+    "VacationHours",
     "SickLeaveHours"
   ],
+  "approved_feature_columns": null,
+  "features_status": "recommended_pending_confirmation",
   "column_roles": [
     {
       "column": "BusinessEntityID",
       "semantic_type": "identifier",
+      "data_type": "int64",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": false,
+      "needs_privacy_review": false,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
     },
     {
       "column": "NationalIDNumber",
       "semantic_type": "identifier",
+      "data_type": "int64",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": true,
+      "needs_privacy_review": true,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
     },
     {
       "column": "LoginID",
       "semantic_type": "identifier",
+      "data_type": "str",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
       "sensitive": true,
+      "needs_privacy_review": true,
       "time_axis": false,
       "quality_blocked": false,
       "quality_issues": [],
+      "quality_issue_codes": [],
       "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
-    },
-    {
-      "column": "OrganizationNode",
-      "semantic_type": "text",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "text",
-      "reason": "Free text; needs text processing before use."
-    },
-    {
-      "column": "OrganizationLevel",
-      "semantic_type": "categorical",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "categorical column usable as a model input."
-    },
-    {
-      "column": "JobTitle",
-      "semantic_type": "categorical",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "categorical column usable as a model input."
-    },
-    {
-      "column": "BirthDate",
-      "semantic_type": "date",
-      "sensitive": true,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "date",
-      "reason": "Date that describes a record or person; usable after turning it into age, duration or similar."
-    },
-    {
-      "column": "MaritalStatus",
-      "semantic_type": "categorical",
-      "sensitive": true,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "categorical column usable as a model input. Sensitive; review fairness and privacy."
-    },
-    {
-      "column": "Gender",
-      "semantic_type": "categorical",
-      "sensitive": true,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "categorical column usable as a model input. Sensitive; review fairness and privacy."
-    },
-    {
-      "column": "HireDate",
-      "semantic_type": "date",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "date",
-      "reason": "Date that describes a record or person; usable after turning it into age, duration or similar."
-    },
-    {
-      "column": "SalariedFlag",
-      "semantic_type": "boolean_flag",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "boolean_flag column usable as a model input."
-    },
-    {
-      "column": "VacationHours",
-      "semantic_type": "numerical_measure",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "target",
-      "reason": "Suggested or chosen target column."
-    },
-    {
-      "column": "SickLeaveHours",
-      "semantic_type": "numerical_measure",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "numerical_measure column usable as a model input."
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
     }
   ],
   "leakage_checks": {
@@ -663,127 +788,18 @@ These are **recommendations with the reason attached, not irreversible decisions
 }
 ```
 
-**E. Quality issue** (a Blocking range problem on `monthly_charges`).
-```json
-{
-  "dataset": "churn.xlsx",
-  "target": "churn",
-  "target_source": "top_suggestion",
-  "problem_type": "binary_classification",
-  "confidence": 0.85,
-  "source": "data_rules",
-  "needs_confirmation": true,
-  "evidence": [
-    "Target 'churn' is boolean_flag with 2 distinct values."
-  ],
-  "alternatives": [],
-  "warnings": [],
-  "candidates": [
-    {
-      "rank": 1,
-      "candidate_target": "churn",
-      "semantic_type": "boolean_flag",
-      "suggested_problem_type": "binary_classification",
-      "score": 100.0,
-      "confidence_level": "High",
-      "priority": "Top suggestion",
-      "warnings": "Check class balance before training",
-      "quality_issues": ""
-    },
-    {
-      "rank": 2,
-      "candidate_target": "tenure_months",
-      "semantic_type": "numerical_measure",
-      "suggested_problem_type": "regression",
-      "score": 70.0,
-      "confidence_level": "Low",
-      "priority": "Candidate",
-      "warnings": "",
-      "quality_issues": ""
-    },
-    {
-      "rank": 3,
-      "candidate_target": "monthly_charges",
-      "semantic_type": "numerical_measure",
-      "suggested_problem_type": "regression",
-      "score": 0.0,
-      "confidence_level": "Low",
-      "priority": "Blocked by quality",
-      "warnings": "INVALID_RANGE (blocking):  [2 rows]",
-      "quality_issues": "INVALID_RANGE (blocking):  [2 rows]"
-    }
-  ],
-  "dataset_characteristics": {
-    "row_count": 100,
-    "column_count": 4,
-    "duplicate_row_count": 0,
-    "profile_status": "success",
-    "feature_column_count": 2,
-    "time_columns": [],
-    "identifier_columns": [
-      "customer_id"
-    ],
-    "date_columns": [],
-    "sensitive_columns": [],
-    "excluded_columns": []
-  },
-  "feature_columns": [
-    "monthly_charges",
-    "tenure_months"
-  ],
-  "column_roles": [
-    {
-      "column": "customer_id",
-      "semantic_type": "identifier",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input."
-    },
-    {
-      "column": "monthly_charges",
-      "semantic_type": "numerical_measure",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": true,
-      "quality_issues": [
-        "INVALID_RANGE (blocking)"
-      ],
-      "role": "feature",
-      "reason": "numerical_measure column usable as a model input. Blocking quality issue reported; review before use."
-    },
-    {
-      "column": "tenure_months",
-      "semantic_type": "numerical_measure",
-      "sensitive": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "role": "feature",
-      "reason": "numerical_measure column usable as a model input."
-    }
-  ],
-  "leakage_checks": {
-    "status": "pending_integration",
-    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
-  },
-  "status": "Proposed, pending verification"
-}
-```
+## 9. Known limits and dependencies
 
-## 8. Known limits and dependencies
+- **Target leakage: not implemented** (design only / pending integration). It needs column correlations from the profiling module. Not reported as done.
+- "Top suggestion" needs an outcome-like word in the column name.
+- Quality penalties are not in the SRS; they are configurable proposed defaults until approved. Null, duplicate-row, key and reference findings are notes only.
+- Everything is computed from the profile only. Time-series gaps, full class distributions beyond the top values, and value-level checks are not available.
+- Preprocessing hints and roles are recommendations.
 
-- **Target leakage: not implemented.** The SRS asks for it. It needs column correlations from the profiling module, which are not available yet. Status: **design only / pending integration**. Not reported as done.
-- "Top suggestion" needs an outcome-like word in the column name. Otherwise candidates are ranked, nothing is marked Top and the user confirms.
-- Quality penalties (Medium x0.85, High x0.6, Blocking x0, and confidence -0.05, -0.10, -0.30) are **not in the SRS**. They are configurable proposed defaults until approved. Null, duplicate-row, key and reference findings are notes only. A Blocking finding makes a column unsuitable only when it is not one of those and is on that column.
-- Profile-based types are an approximation of the data-based ones; they matched on all 40 profiled HR columns.
-- Role recommendations use column names, types and profile facts only.
+## 10. Open points
 
-## 9. Open points
-
-1. Sumanth: which fields does AutoML need beyond section 2 to 5?
-2. Sinchana: which fields does preprocessing need (feature columns, identifiers, date columns are covered; anything else)?
-3. Final HR demo objective: to be confirmed by the project owner. `VacationHours` has been discussed as a possible target only.
-4. Approval of the quality penalty defaults.
+1. Sinchana: does preprocessing need anything more than the roles and hints above?
+2. Meshak and Sumanth: which fields are core for the first integration, and which stay optional?
+3. How and where does the user approve features (`approved_features`) in the application?
+4. Final HR demo objective: to be confirmed by the project owner.
+5. Approval of the quality penalty defaults.

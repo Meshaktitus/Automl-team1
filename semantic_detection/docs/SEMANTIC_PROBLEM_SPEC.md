@@ -2,7 +2,7 @@
 
 Owner: Samarth (Team 1). Status as of Mon 26 Oct 2026: **Implemented and tested as a prototype; proposed, pending Team 1 review.** Nothing here is final until Meshak and the dependent owners agree it.
 
-Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `make_synthetic_datasets.py`. Tests: 172 test cases, all passing. Output contract for the AutoML handoff (revision 2, to be agreed with Sumanth and Sinchana): `docs/HANDOFF_CONTRACT.md`.
+Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `handoff_details.py` (target statistics, preprocessing hints, time info, validation warnings), `make_synthetic_datasets.py`. Tests: 191 test cases, all passing. Output contract for the AutoML handoff (revision 3, after Sumanth's review; to be agreed with Sinchana and the reviewer): `docs/HANDOFF_CONTRACT.md`.
 
 ---
 
@@ -88,7 +88,7 @@ Supported: binary_classification, multiclass_classification, regression, forecas
 
 Note only, whatever the severity: rules about nulls (`NULL_CHECK`, `RULE_NULL_*`), duplicate rows, missing, constant, key and reference checks (the ranking already handles missing and constant columns; key and duplicate checks are about the table), and any issue affecting 0 rows. `INVALID_RANGE` at Blocking does block the column; a Blocking finding should make a target ineligible only when it genuinely makes it unsuitable (Meshak, 27 Oct). One issue may name several columns (`A, B` or `A + B`). `affected_rows` may be a number, a count with percentage, or text. A user override is never overridden by quality.
 
-**Single entry point (`run_detection.py`).** One call takes profiles, an optional quality report, an optional business goal and optional user overrides, and returns one result per dataset (target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, semantic columns, recommended feature columns, a role and reason for every column, dataset characteristics, leakage-check status). `detect_dataset` does one dataset per call. Roles are recommendations with evidence, not decisions. The output fields are defined in `docs/HANDOFF_CONTRACT.md`.
+**Single entry point (`run_detection.py`).** One call takes profiles, an optional quality report, an optional business goal and optional user overrides, and returns one result per dataset (target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, semantic columns, recommended and approved feature columns, a role, reason and preprocessing hint for every column, target statistics, dataset characteristics, validation warnings, leakage-check status). A suggested target is never treated as confirmed (`target_confirmed`). `detect_dataset` does one dataset per call. Roles are recommendations with evidence, not decisions. The output fields are defined in `docs/HANDOFF_CONTRACT.md`.
 
 ## 6. Baseline checklist (status)
 
@@ -110,7 +110,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 
 ## 8. Test report
 
-172 test cases, 172 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
+191 test cases, 191 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
 
 **Correct:** HR-style columns; value-based email, phone, percentage, date, time, currency, flags; ranking and exclusions; all 7 problem types on synthetic data; override precedence; goal feasibility; quality severities; profile adapter.
 
@@ -139,7 +139,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 | Semantic detector, target ranking, problem-type rules, overrides | Implemented |
 | Quality and profiling integration | Implemented |
 | Single integrated entry point (profile + quality + semantic + target + problem) | Implemented (done 27 Oct, ahead of the Wed 28 Oct plan) |
-| Handoff contract to AutoML (Sumanth) and preprocessing (Sinchana) | Draft revision 2 written (feature columns, column roles, dataset characteristics added after Meshak's review); fields to be agreed with Sumanth and Sinchana, then shared for review before it is final |
+| Handoff contract to AutoML (Sumanth) and preprocessing (Sinchana) | Draft revision 3 written (after Meshak's and Sumanth's reviews: feature columns, roles, target statistics, preprocessing hints, defined allowed values); fields still to be agreed with Sinchana, then shared for review before it is frozen |
 | Target-leakage checks | Design only / pending integration (needs profiling correlations) |
 | Final target for HR data | Not needed for the application (the user supplies goal and overrides at run time). The HR demo objective needs project-owner confirmation; `VacationHours` has been discussed as a possible target only |
 | Code submission method | Blocked (no Git; needs Meshak) |
