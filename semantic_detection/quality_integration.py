@@ -112,6 +112,16 @@ def load_quality_report(source):
             data = json.load(handle)
     else:
         data = source
+    if isinstance(data, list) and data and all(
+            isinstance(d, dict) and isinstance(d.get("issues"), list)
+            for d in data):
+        # One file with several datasets: [{"dataset", "issues": [...]}, ...]
+        merged = []
+        for entry in data:
+            merged.extend(
+                _normalise_issue(i, entry.get("dataset"))
+                for i in entry["issues"] if isinstance(i, dict))
+        return {"detected_issues": merged}
     issues = None
     if isinstance(data, dict):
         for key in ("detected_issues", "issues"):

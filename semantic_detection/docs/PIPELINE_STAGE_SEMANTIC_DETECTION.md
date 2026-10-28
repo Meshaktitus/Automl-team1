@@ -1,7 +1,7 @@
 # Pipeline stage submission: Semantic Understanding, Target Detection and Problem Classification
 
 Owner: Samarth (Team 1). Date: Wednesday 28 October 2026. Requested by Meshak: inputs, outputs, target and problem-type handoff, unresolved dependencies, implemented versus proposed, samples.
-Labels: **Implemented** (built and tested, 243 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
+Labels: **Implemented** (built and tested, 244 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
 
 ## 1. Where this stage sits
 

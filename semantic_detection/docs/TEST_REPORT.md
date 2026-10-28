@@ -5,7 +5,7 @@ Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **R
 
 ## 1. Result in one paragraph
 
-243 automatic test cases, all passing. The integrated entry point (`run_detection.py`) reads Sanjay's profiling output and Vinitha's quality report and gives, per dataset, the target, the problem type, the evidence and the feature columns. Today I tested missing, ambiguous and poorly populated targets and columns (19 new cases plus 2 for the profiling class distribution). The tests found 4 real gaps and 1 crash, and a review of failure handling found 3 more weak spots (one bad profile stopped the whole run; duplicate dataset names were merged silently; quality findings for unknown columns were ignored silently); all are fixed. Nine cases remain open; they are listed in section 4 with the person each one depends on.
+244 automatic test cases, all passing. The integrated entry point (`run_detection.py`) reads Sanjay's profiling output and Vinitha's quality report and gives, per dataset, the target, the problem type, the evidence and the feature columns. Today I tested missing, ambiguous and poorly populated targets and columns (19 new cases plus 2 for the profiling class distribution). The tests found 4 real gaps and 1 crash, and a review of failure handling found 3 more weak spots (one bad profile stopped the whole run; duplicate dataset names were merged silently; quality findings for unknown columns were ignored silently); all are fixed. Nine cases remain open; they are listed in section 4 with the person each one depends on.
 
 ## 2. What was tested
 
@@ -14,7 +14,7 @@ Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **R
 | `test_semantic_rules.py` | 26 | The 12 semantic column types, sensitive flag, tokenizing of column names |
 | `test_target_suggestions.py` | 19 | Target ranking, exclusions, overrides, outcome-word rule, synthetic datasets |
 | `test_problem_detection.py` | 31 | Classification vs regression, forecasting, clustering, goal wording, alternatives, overrides |
-| `test_quality_integration.py` | 35 | Vinitha's rule IDs and severities, penalties, notes, blocking, table-level findings |
+| `test_quality_integration.py` | 36 | Vinitha's rule IDs and severities, penalties, notes, blocking, table-level findings |
 | `test_profiling_integration.py` | 14 | Reading Sanjay's profile format |
 | `test_cross_dataset.py` | 26 | Healthcare, banking, telecom, education, retail, anonymous columns, empty column |
 | `test_run_detection.py` | 30 | The single entry point, feature columns, column roles, statistics |
@@ -22,7 +22,7 @@ Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **R
 | `test_leakage_checks.py` | 18 | Correlation-based leakage flags and settings |
 | `test_handoff_schema.py` | 8 | Real outputs follow `handoff_result.schema.json` |
 | `test_robustness.py` | 26 | Missing, constant, mixed-type and unpredictable targets; empty, tiny and zero-row data; profiles without columns; failed or unreadable profiles in a multi-dataset run; duplicate dataset names; quality findings for unknown columns; class distribution from profiling |
-| **Total** | **243** | |
+| **Total** | **244** | |
 
 Real data: the 6 HumanResources tables from Sanjay's profiling output (with correlations) run through the entry point with Vinitha's corrected Employee findings. Result: no crash; the Employee table with `VacationHours` chosen as the target gives regression (0.80), a strong leakage flag on `SickLeaveHours` (0.98) and quality notes; the other five tables correctly say "review required" because no column looks like an outcome.
 
@@ -58,5 +58,5 @@ The thresholds in 1 (20% and 80%) are proposed defaults, not from the SRS.
 ## 5. Evidence
 
 - Code and tests: GitHub, `semantic_detection/`, branch `samarth-leakage-check` (pull request on top of PR #2).
-- Run it: `python -m pytest -q` (243 passed) and `python run_detection.py --profiles profiles --quality outputs/vinitha_employee_rerun_converted.json --quality-dataset HumanResources.Employee.xlsx --override HumanResources.Employee.xlsx=VacationHours`.
+- Run it: `python -m pytest -q` (244 passed) and `python run_detection.py --profiles profiles --quality outputs/vinitha_employee_rerun_converted.json --quality-dataset HumanResources.Employee.xlsx --override HumanResources.Employee.xlsx=VacationHours`.
 - Output structure: `handoff_result.schema.json` and `docs/HANDOFF_CONTRACT.md`.
