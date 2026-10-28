@@ -1,5 +1,4 @@
 import pandas as pd
-<<<<<<< HEAD
 import numpy as np
 
 class DataQualityEngine:
@@ -80,7 +79,8 @@ files_to_check = [
     ('PayHistory', 'HumanResources.EmployeePayHistory.xlsx', 'BusinessEntityID', 'Rate'),
     ('Department', 'HumanResources.Department (1).xlsx', 'DepartmentID', None),
     ('JobCandidate', 'HumanResources.JobCandidate (1).xlsx', 'JobCandidateID', None),
-    ('EmployeeDepartmentHistory', 'HumanResources.EmployeeDepartmentHistory (1).xlsx', 'BusinessEntityID', None)
+    ('EmployeeDepartmentHistory', 'HumanResources.EmployeeDepartmentHistory (1).xlsx', 'BusinessEntityID', None),
+    ('Shift', 'HumanResources.Shift (1).xlsx', 'ShiftID', None)
 ]
 
 all_issues = []
@@ -100,42 +100,7 @@ if all_issues:
     print("=== MASTER DATA QUALITY REPORT ===")
     print(master_report[['Dataset', 'Category', 'Severity', 'Column', 'AffectedRows', 'Description']])
     
-    # Optionally save to CSV for your team repository
     master_report.to_csv("quality_summary_report.csv", index=False)
     print("\n[INFO] Quality report successfully saved to 'quality_summary_report.csv'.")
 else:
     print("No issues found across datasets.")
-=======
-
-print("--- STARTING DATA QUALITY & VALIDATION PIPELINE ---")
-
-# 1. Load datasets using the exact filenames in your folder
-emp = pd.read_excel('HumanResources.Employee (1).xlsx', sheet_name=0)
-emp_dept = pd.read_excel('HumanResources.EmployeeDepartmentHistory (1).xlsx', sheet_name=0)
-pay = pd.read_excel('HumanResources.EmployeePayHistory.xlsx', sheet_name=0)
-dept = pd.read_excel('HumanResources.Department (1).xlsx', sheet_name=0)
-shift = pd.read_excel('HumanResources.Shift (1).xlsx', sheet_name=0)
-cand = pd.read_excel('HumanResources.JobCandidate (1).xlsx', sheet_name=0)
-
-# 2. Verify Primary Key Uniqueness
-print("\n[1] Primary Key Uniqueness Checks:")
-print(f"-> Employee.BusinessEntityID unique: {emp['BusinessEntityID'].is_unique}")
-print(f"-> Department.DepartmentID unique: {dept['DepartmentID'].is_unique}")
-print(f"-> Shift.ShiftID unique: {shift['ShiftID'].is_unique}")
-print(f"-> JobCandidate.JobCandidateID unique: {cand['JobCandidateID'].is_unique}")
-
-# 3. Check Foreign Key Referential Integrity
-print("\n[2] Foreign Key Referential Integrity Checks:")
-unmatched_emp_dept = ~emp_dept['BusinessEntityID'].isin(emp['BusinessEntityID'])
-print(f"-> Unmatched BusinessEntityID in EmployeeDepartmentHistory: {unmatched_emp_dept.sum()}")
-
-unmatched_pay = ~pay['BusinessEntityID'].isin(emp['BusinessEntityID'])
-print(f"-> Unmatched BusinessEntityID in EmployeePayHistory: {unmatched_pay.sum()}")
-
-# 4. Check Numerical Bounds & Pay Statistics
-print("\n[3] Pay Rate Distribution Bounds:")
-print(pay['Rate'].describe())
-print(f"-> Negative or zero pay rates: {(pay['Rate'] <= 0).sum()}")
-
-print("\n--- VALIDATION COMPLETED SUCCESSFULLY ---")
->>>>>>> 679ca58 (Add execute_quality_checks script and complete HR dataset validation workflow)
