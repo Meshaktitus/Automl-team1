@@ -11,7 +11,7 @@ from test_profiling_integration import col, profile
 from test_run_detection import churn_profile, sales_profile
 
 SCHEMA = json.loads(
-    (Path(__file__).parent / "handoff_result.schema.json").read_text(
+    (Path(__file__).resolve().parent.parent / "handoff_result.schema.json").read_text(
         encoding="utf-8"))
 
 
