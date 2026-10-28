@@ -45,7 +45,7 @@ from problem_detection import (
     time_column_info,
 )
 from leakage_checks import check_leakage, read_correlations
-from profiling_integration import analyze_profile, load_profile
+from profiling_integration import analyze_profile, dataset_name, load_profile
 from quality_integration import (
     _penalised,
     _worst,
@@ -185,23 +185,33 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     characteristics = {}
     profile_columns = {}
     profile_correlations = {}
+    profile_distributions = {}
+    empty_profiles = []
     for profile in profiles:
         loaded = load_profile(profile)
         part = analyze_profile(loaded)
+        if not part:
+            empty_profiles.append(dataset_name(loaded))
+            continue
         rows.extend(part)
         info = loaded["dataset"]
         profile_columns[part[0]["dataset"]] = {
             c["name"]: c for c in loaded["columns"]}
         profile_correlations[part[0]["dataset"]] = read_correlations(loaded)
+        profile_distributions[part[0]["dataset"]] = loaded.get(
+            "class_distribution")
         characteristics[part[0]["dataset"]] = {
             "row_count": info["row_count"],
             "column_count": info["column_count"],
             "duplicate_row_count": info["duplicate_row_count"],
             "profile_status": loaded.get("status"),
         }
-    if not rows:
+    if not rows and not empty_profiles:
         raise ValueError("No profiles given")
-    report = pd.DataFrame(rows)
+    report = pd.DataFrame(rows, columns=[
+        "dataset", "column", "data_type", "row_count", "non_null_count",
+        "missing_pct", "unique_values", "semantic_type", "confidence",
+        "evidence", "alternatives", "sensitive", "status"])
     datasets = list(report["dataset"].drop_duplicates())
 
     overrides = dict(overrides or {})
@@ -295,7 +305,8 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         target_stats = target_statistics(
             pcols.get(target) if target else None,
             next((r["semantic_type"] for r in roles if r["column"] == target),
-                 None), problem["problem_type"])
+                 None), problem["problem_type"],
+            profile_distributions[dataset])
         facts = dict(characteristics[dataset])
         facts.update({
             "feature_column_count": len(feature_names),
@@ -353,25 +364,37 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "leakage_checks": leakage,
             "status": STATUS,
         })
+    for name in empty_profiles:
+        results.append(_placeholder_result(
+            name, f"Profile for '{name}' has no columns, so nothing could "
+                  "be analysed", leakage_settings))
     for name in unknown:
-        results.append({
-            "dataset": name, "target": None, "target_source": "none",
-            "problem_type": "review_required", "confidence": 0.0,
-            "source": "data_rules", "needs_confirmation": True,
-            "evidence": [], "alternatives": [],
-            "warnings": [f"Dataset '{name}' not found in the profiles"],
-            "target_confirmed": False, "target_statistics": None,
-            "candidates": [], "semantic_columns": [],
-            "dataset_characteristics": {}, "feature_columns": [],
-            "recommended_feature_columns": [],
-            "approved_feature_columns": None,
-            "features_status": "recommended_pending_confirmation",
-            "column_roles": [],
-            "leakage_checks": {**check_leakage(None, None, 0, leakage_settings),
-                               "reason": LEAKAGE_CHECKS["reason"]},
-            "status": STATUS,
-        })
+        results.append(_placeholder_result(
+            name, f"Dataset '{name}' not found in the profiles",
+            leakage_settings))
     return results
+
+
+def _placeholder_result(name, warning, leakage_settings=None):
+    """Result for a dataset that could not be analysed (same fields as a
+    normal result, so consumers need no special case)."""
+    return {
+        "dataset": name, "target": None, "target_source": "none",
+        "problem_type": "review_required", "confidence": 0.0,
+        "source": "data_rules", "needs_confirmation": True,
+        "evidence": [], "alternatives": [], "warnings": [warning],
+        "target_confirmed": False, "target_statistics": None,
+        "candidates": [], "semantic_columns": [],
+        "dataset_characteristics": {}, "feature_columns": [],
+        "recommended_feature_columns": [],
+        "approved_feature_columns": None,
+        "features_status": "recommended_pending_confirmation",
+        "column_roles": [],
+        "leakage_checks": {**check_leakage(None, None, 0, leakage_settings),
+                           "reason": "Dataset could not be analysed, so the "
+                                     "leakage check was not run."},
+        "status": STATUS,
+    }
 
 
 def detect_dataset(profile, **kwargs):

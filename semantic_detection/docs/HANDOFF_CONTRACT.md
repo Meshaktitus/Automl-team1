@@ -799,6 +799,9 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 - Quality penalties are not in the SRS; they are configurable proposed defaults until approved. Null, duplicate-row, key and reference findings are notes only.
 - Everything is computed from the profile only. Time-series gaps, full class distributions beyond the top values, and value-level checks are not available.
 - Preprocessing hints and roles are recommendations.
+- **Weak targets are not recommended.** A target that is 80% or more missing, or has one distinct value, gives `review_required` with a warning. A target 20% to 80% missing keeps its type, loses 0.15 confidence and gets a warning. A column with mixed text and numbers is treated as `unknown` (not a feature, not a target). These thresholds are proposed defaults, not from the SRS.
+- When the profile contains a full `class_distribution` for the chosen target, `target_statistics.class_distribution` uses it.
+- A profile with no columns gives a `review_required` result with a warning (other datasets in the same run are unaffected).
 
 ## 10. Open points
 

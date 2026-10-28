@@ -1,0 +1,195 @@
+"""Missing, ambiguous and poorly populated targets/columns (Wed 28 Oct)."""
+import pytest
+
+from run_detection import detect_dataset, run_detection
+from test_profiling_integration import col, profile
+
+N = {"min": 0.0, "max": 9.0, "mean": 4.0, "median": 4.0, "std": 2.0}
+BASE = [
+    col("id", "numerical", ident=True, unique=100),
+    col("a", "numerical", "float64", unique=80, summary=N),
+    col("b", "numerical", "float64", unique=70, summary=N),
+    col("c", "categorical", "str", unique=3,
+        top=[{"value": "x", "count": 50, "percentage": 50.0}]),
+]
+
+
+def run(extra=(), rows=100, override=None, **kw):
+    cols = list(BASE) + list(extra)
+    if override:
+        kw["overrides"] = {"d.xlsx": override}
+    return detect_dataset(profile(cols, rows=rows), **kw)
+
+
+def words(result):
+    return " ".join(result["warnings"])
+
+
+def test_target_mostly_missing_is_not_recommended():
+    r = run([col("t", "numerical", "float64", unique=8, missing=90,
+                 pct=90.0, summary=N)], override="t")
+    assert r["problem_type"] == "review_required"
+    assert "90% missing" in words(r)
+
+
+def test_all_missing_target_is_not_recommended():
+    r = run([col("t", "numerical", "float64", unique=0, missing=100,
+                 pct=100.0)], override="t")
+    assert r["problem_type"] == "review_required"
+    assert "100% missing" in words(r)
+
+
+def test_partly_missing_target_gets_a_warning_and_lower_confidence():
+    full = run([col("t", "numerical", "int64", unique=2, summary=N)],
+               override="t")
+    part = run([col("t", "numerical", "int64", unique=2, missing=40,
+                    pct=40.0, summary=N)], override="t")
+    assert part["problem_type"] == full["problem_type"]
+    assert part["confidence"] == pytest.approx(full["confidence"] - 0.15)
+    assert "40% missing" in words(part)
+
+
+def test_small_missing_share_is_not_warned_about():
+    r = run([col("t", "numerical", "int64", unique=2, missing=10, pct=10.0,
+                 summary=N)], override="t")
+    assert "missing" not in words(r)
+
+
+def test_constant_target_is_not_recommended():
+    r = run([col("t", "numerical", "int64", unique=1, summary=N,
+                 warnings=["CONSTANT_COLUMN"])], override="t")
+    assert r["problem_type"] == "review_required"
+    assert "nothing to learn" in words(r)
+
+
+def test_mixed_type_column_cannot_be_a_target_or_a_feature():
+    r = run([col("t", "mixed", "object", unique=20)], override="t")
+    assert r["problem_type"] == "review_required"
+    roles = {x["column"]: x for x in r["column_roles"]}
+    r2 = run([col("m", "mixed", "object", unique=20)])
+    roles2 = {x["column"]: x for x in r2["column_roles"]}
+    assert roles2["m"]["role"] == "excluded"
+    assert "m" not in r2["feature_columns"]
+    assert roles["t"]["semantic_type"] == "unknown"
+
+
+@pytest.mark.parametrize("name,extra", [
+    ("text", col("t", "text", "str", unique=100,
+                 summary={"avg_length": 50.0, "max_length": 90})),
+    ("date", col("t", "datetime", "datetime64[us]", unique=90,
+                 summary={"min": "2020-01-01 00:00:00",
+                          "max": "2021-01-01 00:00:00"})),
+])
+def test_unpredictable_target_types_are_flagged(name, extra):
+    r = run([extra], override="t")
+    assert r["problem_type"] == "review_required"
+    assert "cannot be predicted directly" in words(r)
+
+
+def test_identifier_target_is_flagged():
+    r = run(override="id")
+    assert r["problem_type"] == "review_required"
+    assert "cannot be predicted directly" in words(r)
+
+
+def test_override_for_a_missing_column_is_reported_not_crashed():
+    r = run(override="nope")
+    assert "not found" in words(r)
+    assert r["problem_type"] == "review_required"
+
+
+def test_two_outcome_like_columns_still_need_confirmation():
+    r = run([col("churn", "boolean", "int64", unique=2),
+             col("churned", "boolean", "int64", unique=2)])
+    assert r["needs_confirmation"]
+    assert r["target"] in {"churn", "churned"}
+
+
+def test_goal_that_does_not_fit_the_data_is_explained():
+    r = run(goal="forecast sales next month")
+    assert r["problem_type"] == "review_required"
+    assert "does not fit" in words(r)
+
+
+def test_unknown_problem_type_override_is_rejected_safely():
+    r = run(problem_type_override="magic")
+    assert r["problem_type"] == "review_required"
+    assert "Unsupported" in words(r)
+
+
+def test_all_columns_empty_asks_for_confirmation():
+    cols = [col(f"e{i}", "empty", "float64", unique=0, missing=100,
+                pct=100.0, warnings=["EMPTY_COLUMN"]) for i in range(3)]
+    r = detect_dataset(profile(cols))
+    assert r["problem_type"] == "review_required"
+    assert r["feature_columns"] == []
+
+
+def test_single_column_and_tiny_datasets_do_not_crash():
+    one = detect_dataset(profile([col("a", "numerical", "float64",
+                                      unique=80, summary=N)]))
+    tiny = detect_dataset(profile(
+        [col("a", "numerical", "float64", unique=3, summary=N),
+         col("b", "categorical", "str", unique=2)], rows=3))
+    assert one["problem_type"] == tiny["problem_type"] == "review_required"
+    assert any("small" in w.lower() for w in
+               tiny["dataset_characteristics"]["validation_warnings"])
+
+
+def test_zero_row_profile_does_not_crash():
+    r = detect_dataset(profile(
+        [col("a", "numerical", "float64", unique=0)], rows=0))
+    assert r["problem_type"] == "review_required"
+
+
+def test_numeric_columns_without_summary_do_not_crash():
+    r = detect_dataset(profile([
+        col("a", "numerical", "float64", unique=80),
+        col("b", "numerical", "float64", unique=70)]))
+    assert r["problem_type"] == "review_required"
+
+
+def test_profile_without_columns_gives_a_clear_result_not_a_crash():
+    empty = profile([], name="empty.xlsx")
+    good = profile(BASE, name="good.xlsx")
+    results = run_detection([empty, good])
+    by = {r["dataset"]: r for r in results}
+    assert "no columns" in " ".join(by["empty.xlsx"]["warnings"])
+    assert by["empty.xlsx"]["problem_type"] == "review_required"
+    assert by["good.xlsx"]["feature_columns"]
+
+
+def test_no_profiles_is_still_rejected():
+    with pytest.raises(ValueError):
+        run_detection([])
+
+
+def _binary_profile(distribution=None):
+    cols = [col("id", "numerical", ident=True, unique=100),
+            col("a", "numerical", "float64", unique=80, summary=N),
+            col("churn", "categorical", "str", unique=2,
+                top=[{"value": "no", "count": 90, "percentage": 90.0}])]
+    p = profile(cols)
+    if distribution:
+        p["class_distribution"] = distribution
+    return p
+
+
+GIVEN = {"target_column": "churn", "class_count": 2,
+         "classes": [{"value": "no", "count": 90, "percentage": 90.0},
+                     {"value": "yes", "count": 10, "percentage": 10.0}],
+         "majority_class": "no", "minority_class": "yes",
+         "imbalance_ratio": 9.0, "missing_count": 0}
+
+
+def test_full_class_distribution_from_profiling_is_used():
+    r = detect_dataset(_binary_profile(GIVEN), overrides={"d.xlsx": "churn"})
+    stats = r["target_statistics"]
+    assert [c["value"] for c in stats["class_distribution"]] == ["no", "yes"]
+    assert stats["minority_class_pct"] == 10.0
+
+
+def test_class_distribution_for_another_column_is_ignored():
+    other = dict(GIVEN, target_column="something_else")
+    r = detect_dataset(_binary_profile(other), overrides={"d.xlsx": "churn"})
+    assert r["target_statistics"]["minority_class_pct"] is None

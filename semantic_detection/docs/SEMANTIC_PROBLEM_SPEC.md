@@ -2,7 +2,7 @@
 
 Owner: Samarth (Team 1). Status as of Mon 26 Oct 2026: **Implemented and tested as a prototype; proposed, pending Team 1 review.** Nothing here is final until Meshak and the dependent owners agree it.
 
-Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `leakage_checks.py` (correlation-based leakage flags), `handoff_result.schema.json` (output schema), `handoff_details.py` (target statistics, preprocessing hints, time info, validation warnings), `make_synthetic_datasets.py`. Tests: 217 test cases, all passing. Output contract for the AutoML handoff (revision 3, after Sumanth's review; to be agreed with Sinchana and the reviewer): `docs/HANDOFF_CONTRACT.md`.
+Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `leakage_checks.py` (correlation-based leakage flags), `handoff_result.schema.json` (output schema), `handoff_details.py` (target statistics, preprocessing hints, time info, validation warnings), `make_synthetic_datasets.py`. Tests: 238 test cases, all passing. Output contract for the AutoML handoff (revision 3, after Sumanth's review; to be agreed with Sinchana and the reviewer): `docs/HANDOFF_CONTRACT.md`.
 
 ---
 
@@ -110,7 +110,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 
 ## 8. Test report
 
-217 test cases, 217 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
+238 test cases, 238 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
 
 **Correct:** HR-style columns; value-based email, phone, percentage, date, time, currency, flags; ranking and exclusions; all 7 problem types on synthetic data; override precedence; goal feasibility; quality severities; profile adapter.
 

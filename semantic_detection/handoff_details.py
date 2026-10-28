@@ -51,8 +51,13 @@ def class_distribution(column):
     return None, "Class distribution not available from the profile."
 
 
-def target_statistics(column, semantic_type, problem_type):
-    """Statistics about the target column. column is the profile entry."""
+def target_statistics(column, semantic_type, problem_type,
+                      profile_distribution=None):
+    """Statistics about the target column. column is the profile entry.
+
+    profile_distribution: the profiling module's optional top-level
+    `class_distribution` (given when the profile was run with a target
+    column). It is complete, so it is used when it is for this column."""
     if column is None:
         return None
     out = {
@@ -68,13 +73,27 @@ def target_statistics(column, semantic_type, problem_type):
         "notes": [],
     }
     if str(problem_type).endswith("classification"):
-        items, note = class_distribution(column)
-        out["class_distribution"] = items
-        if note:
-            out["notes"].append(note)
-        complete = items and not (note and note.startswith("Top "))
-        if complete:
+        given = profile_distribution if (
+            isinstance(profile_distribution, dict)
+            and profile_distribution.get("target_column") == column["name"]
+            and profile_distribution.get("classes")) else None
+        if given:
+            items = [{"value": str(c["value"]), "count": c["count"],
+                      "percentage": c["percentage"]}
+                     for c in given["classes"]]
+            out["class_distribution"] = items
             out["minority_class_pct"] = min(i["percentage"] for i in items)
+            out["notes"].append(
+                "Full class distribution from the profiling module.")
+        else:
+            items, note = class_distribution(column)
+            out["class_distribution"] = items
+            if note:
+                out["notes"].append(note)
+            complete = items and not (note and note.startswith("Top "))
+            if complete:
+                out["minority_class_pct"] = min(
+                    i["percentage"] for i in items)
     elif problem_type == "regression" or (column.get("summary") or {}).get(
             "mean") is not None:
         summary = column.get("summary") or {}
