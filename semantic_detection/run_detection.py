@@ -71,11 +71,39 @@ STATUS = "Proposed, pending verification"
 MAX_CANDIDATES = 5
 
 
-def _route_quality(quality, datasets, default_dataset):
+FILE_ENDINGS = (".xlsx", ".xls", ".csv", ".tsv", ".json", ".parquet")
+
+
+def _key(name):
+    """Compare dataset names without case or a file ending, so
+    "HumanResources.Employee.xlsx" and "HumanResources.Employee" match."""
+    text = str(name).strip().lower()
+    for ending in FILE_ENDINGS:
+        if text.endswith(ending):
+            return text[:-len(ending)]
+    return text
+
+
+def _aliases(datasets, dataset_ids):
+    """Every name a dataset may be called by (its name and its dataset_id)
+    mapped to the dataset name used in the results."""
+    found = {}
+    for name in datasets:
+        for label in (name, dataset_ids.get(name)):
+            if label:
+                found.setdefault(_key(label), name)
+    return found
+
+
+def _route_quality(quality, datasets, default_dataset, aliases=None):
     """Give every quality issue a dataset. Issues without one go to
-    default_dataset, or to the only dataset if there is just one."""
+    default_dataset, or to the only dataset if there is just one. A dataset
+    given by dataset_id, or by file name, is matched to the profile."""
+    aliases = aliases or {}
     report = load_quality_report(quality)
     fallback = default_dataset or (datasets[0] if len(datasets) == 1 else None)
+    if fallback is not None:
+        fallback = aliases.get(_key(fallback), fallback)
     issues, skipped = [], 0
     for issue in report["detected_issues"]:
         if not isinstance(issue, dict):
@@ -86,6 +114,9 @@ def _route_quality(quality, datasets, default_dataset):
                 skipped += 1
                 continue
             issue["dataset"] = fallback
+        else:
+            issue["dataset"] = aliases.get(
+                _key(issue["dataset"]), issue["dataset"])
         issues.append(issue)
     return {"detected_issues": issues}, skipped
 
@@ -184,6 +215,7 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     rows = []
     characteristics = {}
     profile_columns = {}
+    dataset_ids = {}
     profile_correlations = {}
     profile_distributions = {}
     empty_profiles = []
@@ -208,6 +240,8 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         info = loaded["dataset"]
         profile_columns[part[0]["dataset"]] = {
             c["name"]: c for c in loaded["columns"]}
+        dataset_ids[part[0]["dataset"]] = (
+            loaded.get("dataset_reference") or {}).get("dataset_id")
         profile_correlations[part[0]["dataset"]] = read_correlations(loaded)
         profile_distributions[part[0]["dataset"]] = loaded.get(
             "class_distribution")
@@ -225,14 +259,16 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         "evidence", "alternatives", "sensitive", "status"])
     datasets = list(report["dataset"].drop_duplicates())
 
-    overrides = dict(overrides or {})
+    aliases = _aliases(datasets, dataset_ids)
+    overrides = {aliases.get(_key(d), d): c
+                 for d, c in dict(overrides or {}).items()}
     unknown = [d for d in overrides if d not in datasets]
     skipped_quality = 0
     suggestions = suggest_targets(report, overrides=overrides)
     routed = None
     if quality is not None:
         routed, skipped_quality = _route_quality(
-            quality, datasets, quality_dataset)
+            quality, datasets, quality_dataset, aliases)
         suggestions = apply_quality_to_suggestions(
             suggestions, routed, settings=quality_settings)
 
@@ -356,6 +392,7 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
 
         results.append({
             "dataset": dataset,
+            "dataset_id": dataset_ids.get(dataset),
             "target": target,
             "target_source": target_source,
             "problem_type": problem["problem_type"],
@@ -407,7 +444,8 @@ def _placeholder_result(name, warning, leakage_settings=None):
     """Result for a dataset that could not be analysed (same fields as a
     normal result, so consumers need no special case)."""
     return {
-        "dataset": name, "target": None, "target_source": "none",
+        "dataset": name, "dataset_id": None, "target": None,
+        "target_source": "none",
         "problem_type": "review_required", "confidence": 0.0,
         "source": "data_rules", "needs_confirmation": True,
         "evidence": [], "alternatives": [], "warnings": [warning],

@@ -135,7 +135,7 @@ def test_result_is_json_serialisable_and_has_the_agreed_fields():
     text = json.dumps(results)
     assert json.loads(text)[0]["status"] == "Proposed, pending verification"
     assert set(results[0]) == {
-        "dataset", "target", "target_source", "problem_type", "confidence",
+        "dataset", "dataset_id", "target", "target_source", "problem_type", "confidence",
         "source", "needs_confirmation", "evidence", "alternatives",
         "warnings", "candidates", "semantic_columns",
         "dataset_characteristics", "feature_columns", "column_roles",
@@ -350,3 +350,35 @@ def test_time_info_for_forecasting_data():
     assert info[0]["start"].startswith("2023-01-01")
     assert info[0]["estimated_frequency"] == "daily"
     assert "Not available" in info[0]["gaps"]
+
+
+def _hr_profile():
+    p = churn_profile()
+    p["dataset_reference"] = {"dataset_id": "HR.Churn", "name": "HR.Churn.xlsx"}
+    return p
+
+
+def _quality_for(dataset):
+    return {"dataset": dataset, "issues": [{
+        "rule_id": "INVALID_RANGE", "severity": "Error",
+        "affected_column": "churn", "affected_rows": 3}]}
+
+
+def test_quality_matches_by_dataset_id_or_file_name_or_name_without_ending():
+    for label in ("HR.Churn", "HR.Churn.xlsx", "hr.churn.XLSX", "HR.Churn.csv"):
+        result = run_detection([_hr_profile()],
+                               quality=_quality_for(label))[0]
+        churn = [c for c in result["candidates"]
+                 if c["candidate_target"] == "churn"]
+        assert churn and churn[0]["quality_issue_codes"], label
+
+
+def test_override_can_use_dataset_id():
+    result = run_detection([_hr_profile()],
+                           overrides={"HR.Churn": "monthly_charges"})[0]
+    assert result["target"] == "monthly_charges"
+    assert result["target_source"] == "user_override"
+
+
+def test_result_carries_the_profile_dataset_id():
+    assert run_detection([_hr_profile()])[0]["dataset_id"] == "HR.Churn"

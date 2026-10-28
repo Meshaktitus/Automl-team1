@@ -33,6 +33,12 @@
     "dataset": {
       "type": "string"
     },
+    "dataset_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "target": {
       "type": [
         "string",
