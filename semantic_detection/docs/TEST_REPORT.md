@@ -5,7 +5,7 @@ Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **R
 
 ## 1. Result in one paragraph
 
-238 automatic test cases, all passing. The integrated entry point (`run_detection.py`) reads Sanjay's profiling output and Vinitha's quality report and gives, per dataset, the target, the problem type, the evidence and the feature columns. Today I tested missing, ambiguous and poorly populated targets and columns (19 new cases plus 2 for the profiling class distribution). The tests found 4 real gaps and 1 crash; all are fixed. Nine cases remain open; they are listed in section 4 with the person each one depends on.
+243 automatic test cases, all passing. The integrated entry point (`run_detection.py`) reads Sanjay's profiling output and Vinitha's quality report and gives, per dataset, the target, the problem type, the evidence and the feature columns. Today I tested missing, ambiguous and poorly populated targets and columns (19 new cases plus 2 for the profiling class distribution). The tests found 4 real gaps and 1 crash, and a review of failure handling found 3 more weak spots (one bad profile stopped the whole run; duplicate dataset names were merged silently; quality findings for unknown columns were ignored silently); all are fixed. Nine cases remain open; they are listed in section 4 with the person each one depends on.
 
 ## 2. What was tested
 
@@ -21,8 +21,8 @@ Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **R
 | `test_handoff_details.py` | 10 | Target statistics, preprocessing hints, time info, validation warnings |
 | `test_leakage_checks.py` | 18 | Correlation-based leakage flags and settings |
 | `test_handoff_schema.py` | 8 | Real outputs follow `handoff_result.schema.json` |
-| `test_robustness.py` | 21 | Missing, constant, mixed-type and unpredictable targets; empty, tiny and zero-row data; profiles without columns; class distribution from profiling |
-| **Total** | **238** | |
+| `test_robustness.py` | 26 | Missing, constant, mixed-type and unpredictable targets; empty, tiny and zero-row data; profiles without columns; failed or unreadable profiles in a multi-dataset run; duplicate dataset names; quality findings for unknown columns; class distribution from profiling |
+| **Total** | **243** | |
 
 Real data: the 6 HumanResources tables from Sanjay's profiling output (with correlations) run through the entry point with Vinitha's corrected Employee findings. Result: no crash; the Employee table with `VacationHours` chosen as the target gives regression (0.80), a strong leakage flag on `SickLeaveHours` (0.98) and quality notes; the other five tables correctly say "review required" because no column looks like an outcome.
 
@@ -34,7 +34,10 @@ Real data: the 6 HumanResources tables from Sanjay's profiling output (with corr
 | 2 | Target with one distinct value | Recommended classification, 0.85 | `review_required`: "nothing to learn" |
 | 3 | Column with mixed text and numbers (profile type `mixed`) | Treated as categorical, usable as target and feature | Treated as unknown: excluded as a feature, cannot be a target |
 | 4 | Profile with zero columns | Crash (`IndexError`) | A clear `review_required` result with a warning; other datasets in the same run are unaffected |
-| 5 | Class distribution of the target | Only the top values from the profile were used | The profile's full `class_distribution` is used when present for the chosen target |
+| 5 | One failed or unreadable profile in a run of several | The whole run stopped with an error | That dataset gets a `review_required` result with the reason; the others continue |
+| 6 | Same dataset name in two profiles | Merged silently into one dataset | First is used, the second gets a result saying so |
+| 7 | Quality finding for a column that is not in the dataset | Ignored silently | Ignored with a warning in the result |
+| 8 | Class distribution of the target | Only the top values from the profile were used | The profile's full `class_distribution` is used when present for the chosen target |
 
 The thresholds in 1 (20% and 80%) are proposed defaults, not from the SRS.
 
@@ -55,5 +58,5 @@ The thresholds in 1 (20% and 80%) are proposed defaults, not from the SRS.
 ## 5. Evidence
 
 - Code and tests: GitHub, `semantic_detection/`, branch `samarth-leakage-check` (pull request on top of PR #2).
-- Run it: `python -m pytest -q` (238 passed) and `python run_detection.py --profiles profiles --quality outputs/vinitha_employee_rerun_converted.json --quality-dataset HumanResources.Employee.xlsx --override HumanResources.Employee.xlsx=VacationHours`.
+- Run it: `python -m pytest -q` (243 passed) and `python run_detection.py --profiles profiles --quality outputs/vinitha_employee_rerun_converted.json --quality-dataset HumanResources.Employee.xlsx --override HumanResources.Employee.xlsx=VacationHours`.
 - Output structure: `handoff_result.schema.json` and `docs/HANDOFF_CONTRACT.md`.

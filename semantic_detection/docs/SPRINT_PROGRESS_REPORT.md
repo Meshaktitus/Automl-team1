@@ -6,7 +6,7 @@ Honest labels used below: **Implemented**, **Prototype**, **Design only**, **Blo
 
 ## 1. Summary
 
-All planned work up to and including today (Wed 28 Oct) is complete. The module is Implemented and tested (238 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
+All planned work up to and including today (Wed 28 Oct) is complete. The module is Implemented and tested (243 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
 
 ## 2. Plan versus status (through today)
 
@@ -46,7 +46,7 @@ All planned work up to and including today (Wed 28 Oct) is complete. The module 
 - One entry point (`run_detection.py`) gives, per dataset: target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, recommended and approved feature columns, a role and preprocessing hint for every column, target statistics, dataset characteristics and validation warnings, and the leakage-check status.
 - Tested on HR data and on healthcare, banking, telecom, education and retail data, plus anonymous column names and an empty column. Nothing is hard-coded to HR.
 
-Size: about 2,900 lines of code, 238 test cases, 3 documents.
+Size: about 2,900 lines of code, 243 test cases, 3 documents.
 
 ## 4. Tuesday 27 Oct
 
@@ -68,7 +68,7 @@ Size: about 2,900 lines of code, 238 test cases, 3 documents.
 | Wrote the machine-readable output schema (JSON Schema) for the handoff result, with a test that checks real outputs against it. It caught one value the schema did not list (`User-selected` confidence level), fixed, and one unknown-dataset result with a different shape, fixed | `handoff_result.schema.json`, `test_handoff_schema.py` (8 tests) |
 | Cleaned the project: moved an old backup folder out, which was making the tests load an old file | Test run: 209 passed |
 
-Test count: 117 (Mon night) to 238 (today).
+Test count: 117 (Mon night) to 243 (today).
 
 ## 4b. Today's work (Wed 28 Oct), separate
 
@@ -78,9 +78,10 @@ Test count: 117 (Mon night) to 238 (today).
 | Found and fixed 4 real gaps and 1 crash: a 90%-empty target was still recommended at 0.85 confidence; a constant target was recommended; mixed text/number columns were usable; a profile with no columns crashed | `problem_detection.py`, `profiling_integration.py`, `run_detection.py` |
 | Used the full class distribution from Sanjay's profile when it is given for the chosen target (2 tests) | `handoff_details.py`, `run_detection.py` |
 | Wrote the test report with the unresolved-case list (9 open cases, each with an owner) | `docs/TEST_REPORT.md` |
+| Meshak asked every owner for inputs, outputs, dependencies, error handling, implemented versus proposed, and samples. Verified each failure case on real code, fixed 3 weak spots (one bad profile no longer stops a run; duplicate dataset names; quality findings for unknown columns), and wrote the stage submission with 5 real sample files | `docs/PIPELINE_STAGE_SEMANTIC_DETECTION.md`, `samples/` |
 | Contract and spec updated with the new rules; progress report updated | `docs/HANDOFF_CONTRACT.md`, `docs/SEMANTIC_PROBLEM_SPEC.md` |
 
-Test count today: 217 to 238.
+Test count today: 217 to 243.
 
 ## 5. Open items and dependencies (not unfinished work)
 

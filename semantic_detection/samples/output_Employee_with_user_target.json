@@ -1,0 +1,611 @@
+{
+  "dataset": "HumanResources.Employee.xlsx",
+  "target": "VacationHours",
+  "target_source": "user_override",
+  "problem_type": "regression",
+  "confidence": 0.8,
+  "source": "data_rules",
+  "needs_confirmation": true,
+  "evidence": [
+    "Target 'VacationHours' is numerical_measure with 100 distinct values."
+  ],
+  "alternatives": [],
+  "warnings": [
+    "Possible target leakage: 'SickLeaveHours' moves almost together with the target (correlation +0.98). Check that it is known before the outcome and is not a copy of it."
+  ],
+  "target_confirmed": true,
+  "target_statistics": {
+    "column": "VacationHours",
+    "data_type": "int64",
+    "semantic_type": "numerical_measure",
+    "unique_count": 100,
+    "missing_count": 0,
+    "missing_pct": 0.0,
+    "class_distribution": null,
+    "minority_class_pct": null,
+    "numerical_statistics": {
+      "min": 0.0,
+      "max": 99.0,
+      "mean": 50.6138,
+      "median": 51.0,
+      "std": 28.7862
+    },
+    "notes": []
+  },
+  "candidates": [
+    {
+      "rank": 1,
+      "candidate_target": "VacationHours",
+      "semantic_type": "numerical_measure",
+      "suggested_problem_type": "regression",
+      "score": 70.0,
+      "confidence_level": "User-selected",
+      "priority": "User-selected",
+      "warnings": "",
+      "quality_issues": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
+    },
+    {
+      "rank": 2,
+      "candidate_target": "SalariedFlag",
+      "semantic_type": "boolean_flag",
+      "suggested_problem_type": "binary_classification",
+      "score": 80.0,
+      "confidence_level": "Low",
+      "priority": "Candidate",
+      "warnings": "Check class balance before training; No column clearly looks like an outcome; confirm the business objective",
+      "quality_issues": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
+    },
+    {
+      "rank": 3,
+      "candidate_target": "SickLeaveHours",
+      "semantic_type": "numerical_measure",
+      "suggested_problem_type": "regression",
+      "score": 70.0,
+      "confidence_level": "Low",
+      "priority": "Candidate",
+      "warnings": "No column clearly looks like an outcome; confirm the business objective",
+      "quality_issues": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
+    },
+    {
+      "rank": 4,
+      "candidate_target": "OrganizationLevel",
+      "semantic_type": "categorical",
+      "suggested_problem_type": "multiclass_classification",
+      "score": 62.8,
+      "confidence_level": "Low",
+      "priority": "Candidate",
+      "warnings": "No column clearly looks like an outcome; confirm the business objective; RULE_NULL_STRUCTURAL (low): Do not impute [2 rows]",
+      "quality_issues": "RULE_NULL_STRUCTURAL (low): Do not impute [2 rows]",
+      "quality_issue_codes": [
+        "RULE_NULL_STRUCTURAL"
+      ],
+      "blocking_reason": null
+    },
+    {
+      "rank": 5,
+      "candidate_target": "MaritalStatus",
+      "semantic_type": "categorical",
+      "suggested_problem_type": "binary_classification",
+      "score": 35.0,
+      "confidence_level": "Low",
+      "priority": "Candidate",
+      "warnings": "Check class balance before training; Sensitive attribute; review fairness and privacy before use; No column clearly looks like an outcome; confirm the business objective",
+      "quality_issues": "",
+      "quality_issue_codes": [],
+      "blocking_reason": null
+    }
+  ],
+  "semantic_columns": [
+    {
+      "column": "BusinessEntityID",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "NationalIDNumber",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": true
+    },
+    {
+      "column": "LoginID",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": true
+    },
+    {
+      "column": "OrganizationNode",
+      "semantic_type": "text",
+      "confidence": 0.5,
+      "sensitive": false
+    },
+    {
+      "column": "OrganizationLevel",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": false
+    },
+    {
+      "column": "JobTitle",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": false
+    },
+    {
+      "column": "BirthDate",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": true
+    },
+    {
+      "column": "MaritalStatus",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": true
+    },
+    {
+      "column": "Gender",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": true
+    },
+    {
+      "column": "HireDate",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "SalariedFlag",
+      "semantic_type": "boolean_flag",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "VacationHours",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "SickLeaveHours",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "CurrentFlag",
+      "semantic_type": "boolean_flag",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "rowguid",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "ModifiedDate",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": false
+    }
+  ],
+  "dataset_characteristics": {
+    "row_count": 290,
+    "column_count": 16,
+    "duplicate_row_count": 0,
+    "profile_status": "warning",
+    "feature_column_count": 6,
+    "feature_type_counts": {
+      "numerical": 1,
+      "categorical": 4,
+      "boolean": 1,
+      "other": 0
+    },
+    "missing_summary": [
+      {
+        "column": "OrganizationNode",
+        "missing_count": 1,
+        "missing_pct": 0.3
+      },
+      {
+        "column": "OrganizationLevel",
+        "missing_count": 1,
+        "missing_pct": 0.3
+      }
+    ],
+    "time_info": [],
+    "time_columns": [],
+    "identifier_columns": [
+      "BusinessEntityID",
+      "NationalIDNumber",
+      "LoginID"
+    ],
+    "date_columns": [
+      "BirthDate",
+      "HireDate"
+    ],
+    "sensitive_columns": [
+      "NationalIDNumber",
+      "LoginID",
+      "BirthDate",
+      "MaritalStatus",
+      "Gender"
+    ],
+    "excluded_columns": [
+      "CurrentFlag",
+      "rowguid",
+      "ModifiedDate"
+    ],
+    "validation_warnings": [
+      "Feature 'JobTitle' has 67 distinct values (high cardinality)."
+    ]
+  },
+  "feature_columns": [
+    "OrganizationLevel",
+    "JobTitle",
+    "MaritalStatus",
+    "Gender",
+    "SalariedFlag",
+    "SickLeaveHours"
+  ],
+  "recommended_feature_columns": [
+    "OrganizationLevel",
+    "JobTitle",
+    "MaritalStatus",
+    "Gender",
+    "SalariedFlag",
+    "SickLeaveHours"
+  ],
+  "approved_feature_columns": null,
+  "features_status": "recommended_pending_confirmation",
+  "column_roles": [
+    {
+      "column": "BusinessEntityID",
+      "semantic_type": "identifier",
+      "data_type": "int64",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "identifier",
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "NationalIDNumber",
+      "semantic_type": "identifier",
+      "data_type": "int64",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "identifier",
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "LoginID",
+      "semantic_type": "identifier",
+      "data_type": "str",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "identifier",
+      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "OrganizationNode",
+      "semantic_type": "text",
+      "data_type": "str",
+      "unique_values": 289,
+      "missing_count": 1,
+      "missing_pct": 0.3,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [
+        "RULE_NULL_STRUCTURAL (low)"
+      ],
+      "quality_issue_codes": [
+        "RULE_NULL_STRUCTURAL"
+      ],
+      "role": "text",
+      "reason": "Free text; needs text processing before use.",
+      "preprocessing_hint": "Text processing (tokenise or embed), or leave out.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "OrganizationLevel",
+      "semantic_type": "categorical",
+      "data_type": "float64",
+      "unique_values": 4,
+      "missing_count": 1,
+      "missing_pct": 0.3,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [
+        "RULE_NULL_STRUCTURAL (low)"
+      ],
+      "quality_issue_codes": [
+        "RULE_NULL_STRUCTURAL"
+      ],
+      "role": "feature",
+      "reason": "categorical column usable as a model input.",
+      "preprocessing_hint": "Impute missing values (0.3%); one-hot encode.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "JobTitle",
+      "semantic_type": "categorical",
+      "data_type": "str",
+      "unique_values": 67,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "feature",
+      "reason": "categorical column usable as a model input.",
+      "preprocessing_hint": "Encode categories (many values: use frequency or target encoding, not one-hot).",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "BirthDate",
+      "semantic_type": "date",
+      "data_type": "datetime64[us]",
+      "unique_values": 275,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [
+        "RULE_INVALID_RANGE_HIRE_AGE (warning / audit)"
+      ],
+      "quality_issue_codes": [
+        "RULE_INVALID_RANGE_HIRE_AGE"
+      ],
+      "role": "date",
+      "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
+      "preprocessing_hint": "Turn into age, duration, year or month.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "MaritalStatus",
+      "semantic_type": "categorical",
+      "data_type": "str",
+      "unique_values": 2,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "feature",
+      "reason": "categorical column usable as a model input. Sensitive; review fairness and privacy.",
+      "preprocessing_hint": "One-hot encode.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "Gender",
+      "semantic_type": "categorical",
+      "data_type": "str",
+      "unique_values": 2,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "feature",
+      "reason": "categorical column usable as a model input. Sensitive; review fairness and privacy.",
+      "preprocessing_hint": "One-hot encode.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "HireDate",
+      "semantic_type": "date",
+      "data_type": "datetime64[us]",
+      "unique_values": 164,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [
+        "RULE_INVALID_RANGE_HIRE_AGE (warning / audit)"
+      ],
+      "quality_issue_codes": [
+        "RULE_INVALID_RANGE_HIRE_AGE"
+      ],
+      "role": "date",
+      "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
+      "preprocessing_hint": "Turn into age, duration, year or month.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "SalariedFlag",
+      "semantic_type": "boolean_flag",
+      "data_type": "int64",
+      "unique_values": 2,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "feature",
+      "reason": "boolean_flag column usable as a model input.",
+      "preprocessing_hint": "Encode as 0/1.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "VacationHours",
+      "semantic_type": "numerical_measure",
+      "data_type": "int64",
+      "unique_values": 100,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "target",
+      "reason": "Suggested or chosen target column.",
+      "preprocessing_hint": "Target: use as the value to predict; check for outliers.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "SickLeaveHours",
+      "semantic_type": "numerical_measure",
+      "data_type": "int64",
+      "unique_values": 51,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "feature",
+      "reason": "numerical_measure column usable as a model input. Possible target leakage (correlation +0.98 with the target).",
+      "preprocessing_hint": "Scale if the model needs it.",
+      "leakage_suspect": "strong",
+      "leakage_correlation": 0.9783
+    },
+    {
+      "column": "CurrentFlag",
+      "semantic_type": "boolean_flag",
+      "data_type": "int64",
+      "unique_values": 1,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "excluded",
+      "reason": "Constant or empty column.",
+      "preprocessing_hint": "Drop; not useful as a model input.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "rowguid",
+      "semantic_type": "identifier",
+      "data_type": "str",
+      "unique_values": 290,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "excluded",
+      "reason": "Audit or technical metadata column.",
+      "preprocessing_hint": "Drop; not useful as a model input.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "ModifiedDate",
+      "semantic_type": "date",
+      "data_type": "datetime64[us]",
+      "unique_values": 2,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "excluded",
+      "reason": "Audit or technical metadata column.",
+      "preprocessing_hint": "Drop; not useful as a model input.",
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    }
+  ],
+  "leakage_checks": {
+    "thresholds": {
+      "possible": 0.8,
+      "strong": 0.95
+    },
+    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+    "suspects": [
+      {
+        "column": "SickLeaveHours",
+        "correlation": 0.9783,
+        "level": "strong",
+        "message": "'SickLeaveHours' moves almost together with the target (correlation +0.98). Check that it is known before the outcome and is not a copy of it."
+      }
+    ],
+    "status": "checked",
+    "reason": "1 column(s) at or above 0.80"
+  },
+  "status": "Proposed, pending verification"
+}

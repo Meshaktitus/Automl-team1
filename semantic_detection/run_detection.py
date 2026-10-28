@@ -187,11 +187,22 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     profile_correlations = {}
     profile_distributions = {}
     empty_profiles = []
+    unusable = []
     for profile in profiles:
-        loaded = load_profile(profile)
-        part = analyze_profile(loaded)
+        try:
+            loaded = load_profile(profile)
+            part = analyze_profile(loaded)
+        except (ValueError, OSError) as error:
+            # one bad profile must not stop the other datasets
+            unusable.append((_profile_label(profile), str(error)))
+            continue
         if not part:
             empty_profiles.append(dataset_name(loaded))
+            continue
+        if part[0]["dataset"] in profile_columns:
+            unusable.append((part[0]["dataset"], "Dataset name appears in "
+                             "more than one profile; only the first one "
+                             "was used"))
             continue
         rows.extend(part)
         info = loaded["dataset"]
@@ -206,7 +217,7 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "duplicate_row_count": info["duplicate_row_count"],
             "profile_status": loaded.get("status"),
         }
-    if not rows and not empty_profiles:
+    if not rows and not empty_profiles and not unusable:
         raise ValueError("No profiles given")
     report = pd.DataFrame(rows, columns=[
         "dataset", "column", "data_type", "row_count", "non_null_count",
@@ -271,6 +282,11 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         time_cols = [name for name, _ in time_column_info(dataset_rows)]
         quality_by_column = (
             issues_by_column(routed, dataset) if routed is not None else {})
+        for unknown_column in [c for c in quality_by_column
+                               if c not in set(dataset_rows["column"])][:5]:
+            warnings.append(
+                f"Quality report names column '{unknown_column}', which is "
+                "not in this dataset; the finding was ignored")
         roles = build_column_roles(
             dataset_rows, target, time_cols, quality_by_column,
             problem["problem_type"])
@@ -364,6 +380,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "leakage_checks": leakage,
             "status": STATUS,
         })
+    for name, why in unusable:
+        results.append(_placeholder_result(
+            name, f"Profile for '{name}' could not be used: {why}",
+            leakage_settings))
     for name in empty_profiles:
         results.append(_placeholder_result(
             name, f"Profile for '{name}' has no columns, so nothing could "
@@ -373,6 +393,14 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             name, f"Dataset '{name}' not found in the profiles",
             leakage_settings))
     return results
+
+
+def _profile_label(profile):
+    """A readable name for a profile that could not be read."""
+    if isinstance(profile, dict):
+        ref = profile.get("dataset_reference") or {}
+        return str(ref.get("name") or ref.get("dataset_id") or "unknown")
+    return Path(str(profile)).name
 
 
 def _placeholder_result(name, warning, leakage_settings=None):

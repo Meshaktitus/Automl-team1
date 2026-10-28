@@ -193,3 +193,51 @@ def test_class_distribution_for_another_column_is_ignored():
     other = dict(GIVEN, target_column="something_else")
     r = detect_dataset(_binary_profile(other), overrides={"d.xlsx": "churn"})
     assert r["target_statistics"]["minority_class_pct"] is None
+
+
+# ---- failure handling in a multi-dataset run -------------------------------
+
+def test_a_failed_profile_does_not_stop_the_other_datasets():
+    failed = profile([], name="bad.xlsx")
+    failed["status"] = "failed"
+    failed["errors"] = [{"code": "SOURCE_NOT_FOUND", "message": "x",
+                         "field": None}]
+    results = run_detection([failed, profile(BASE, name="good.xlsx")])
+    by = {r["dataset"]: r for r in results}
+    assert "could not be used" in " ".join(by["bad.xlsx"]["warnings"])
+    assert "SOURCE_NOT_FOUND" in " ".join(by["bad.xlsx"]["warnings"])
+    assert by["good.xlsx"]["feature_columns"]
+
+
+def test_wrong_schema_version_is_reported_per_dataset():
+    wrong = profile(BASE, name="wrong.xlsx")
+    wrong["schema_version"] = "9.9"
+    results = run_detection([wrong, profile(BASE, name="good.xlsx")])
+    by = {r["dataset"]: r for r in results}
+    assert "schema_version" in " ".join(by["wrong.xlsx"]["warnings"])
+    assert by["good.xlsx"]["feature_columns"]
+
+
+def test_unreadable_profile_file_is_reported_not_raised(tmp_path):
+    broken = tmp_path / "x.profile.json"
+    broken.write_text("{not json", encoding="utf-8")
+    results = run_detection([str(broken), profile(BASE, name="good.xlsx")])
+    names = [r["dataset"] for r in results]
+    assert "x.profile.json" in names and "good.xlsx" in names
+
+
+def test_same_dataset_name_twice_uses_the_first_only():
+    results = run_detection([profile(BASE, name="d.xlsx"),
+                             profile(BASE, name="d.xlsx")])
+    assert len(results) == 2
+    assert "more than one profile" in " ".join(results[1]["warnings"])
+    assert results[0]["feature_columns"] and not results[1]["feature_columns"]
+
+
+def test_quality_finding_for_an_unknown_column_is_flagged():
+    q = {"dataset": "d.xlsx", "issues": [
+        {"rule_id": "INVALID_RANGE", "severity": "Blocking",
+         "affected_column": "zzz", "affected_rows": 3}]}
+    r = run(quality=q)
+    assert "zzz" in words(r) and "ignored" in words(r)
+    assert all(not x["quality_blocked"] for x in r["column_roles"])
