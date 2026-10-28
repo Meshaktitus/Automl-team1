@@ -1,7 +1,7 @@
 # Pipeline stage submission: Semantic Understanding, Target Detection and Problem Classification
 
 Owner: Samarth (Team 1). Date: Wednesday 28 October 2026. Requested by Meshak: inputs, outputs, target and problem-type handoff, unresolved dependencies, implemented versus proposed, samples.
-Labels: **Implemented** (built and tested, 244 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
+Labels: **Implemented** (built and tested, 243 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
 
 ## 1. Where this stage sits
 
@@ -69,15 +69,15 @@ Known gap: an unreadable quality file raises an error and stops the call (it is 
 
 | # | Open point | Depends on |
 |---|---|---|
-| 1 | Final quality output for the HR tables in the agreed JSON format with the agreed rule IDs and severities (Employee re-run came as text with new IDs and severities such as "Warning / Audit"). One count (structural nulls: 2 records versus 1 in the profile) to confirm. Other five tables not received | Vinitha |
+| 1 | **Received and integrated (28 Oct).** Final quality JSON for all 6 HR tables, in the agreed format, matched the profile names. Still her assumptions to confirm: pay band $6.50 to $125.00 for `Rate`, and the age-at-hire policy range | Vinitha |
 | 2 | Will `dataset_reference.name` stay the file name? Quality results are matched on it | Sanjay |
 | 3 | Profiling's `class_distribution` only exists when `target_column` is sent. Will the backend run profiling again after the user picks a target? | Sanjay, Meshak |
 | 4 | Profiling's `likely_identifier` on key columns (`JobCandidate.BusinessEntityID` is true with 84.6% missing) | Sanjay |
 | 5 | Agree the preprocessing fields (roles, hints, privacy flags) and who owns each | Sinchana, Sumanth, Meshak |
-| 6 | Where and how the user approves feature columns (`approved_features`) | Meshak, Sumanth |
-| 7 | Approve the proposed defaults: leakage 0.80 / 0.95, quality penalties, target missing 20% / 80%, mixed-type columns excluded | Meshak |
-| 8 | Final business objective for the HR demo (no outcome-like column exists; `VacationHours` was an example) | Meshak, project owner |
-| 9 | Transport: function call, JSON file or API for passing results | Meshak (backend contract) |
+| 6 | Features stay pending until the user approves them. **Working decision (Meshak, 28 Oct):** the exact screen or step is to be agreed with Team 3 | Team 3, Meshak |
+| 7 | **Working decision (Meshak, 28 Oct):** leakage 0.80 / 0.95, quality penalties and target missing 20% / 80% stay configurable **proposed defaults, not approved requirements**. Correlation alone is not proof of leakage. Mixed-type column rule also proposed | Meshak (final approval pending) |
+| 8 | **Working decision (Meshak, 28 Oct):** `Employee.VacationHours` is a provisional demo target, labeled as a demo choice. Final business objective and target pending confirmation | Meshak, project owner |
+| 9 | **Working decision (Meshak, 28 Oct):** one JSON file per run with the agreed schema for now; API after Team 2 confirms the contract | Team 2, Meshak |
 | 10 | Leakage check covers numerical targets only; categorical association, derived columns and time-based leakage are not detected | Sanjay (data), Meshak (scope) |
 
 ## 8. Sample inputs and outputs (real files in `samples/`)

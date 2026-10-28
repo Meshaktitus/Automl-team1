@@ -807,6 +807,32 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 
 1. Sinchana: does preprocessing need anything more than the roles and hints above?
 2. Meshak and Sumanth: which fields are core for the first integration, and which stay optional?
-3. How and where does the user approve features (`approved_features`) in the application?
-4. Final HR demo objective: to be confirmed by the project owner.
-5. Approval of the quality penalty defaults.
+3. How and where does the user approve features (`approved_features`) in the application? Features stay pending until approved; the screen is to be agreed with Team 3 (section 11).
+4. Final HR demo objective: `VacationHours` is a provisional demo target (see section 11); the final objective is to be confirmed by the project owner.
+5. Approval of the quality penalty and leakage defaults: they stay configurable proposed defaults for now (section 11).
+
+## 11. Working decisions (from Meshak, Wed 28 Oct 2026)
+
+These are current working decisions, not final approvals. Anything not listed here is still open (section 10).
+
+| # | Decision | Status |
+|---|---|---|
+| 1 | **Demo target:** `Employee.VacationHours` is used as a provisional demo target, clearly labeled as a demo choice. The final business objective and target are still pending confirmation. In the Employee sample, `target_confirmed` is true only because the run was given the target by override; it does not mean the business objective is approved. | Working decision |
+| 2 | **Defaults:** leakage thresholds (0.80 / 0.95), quality penalties and the weak-target rules (80% missing or constant gives `review_required`; 20% to 80% missing gives a warning) stay configurable and are **proposed defaults, not approved requirements**. | Working decision |
+| 3 | **Correlation is not proof of leakage.** A leakage suspect is a flag for a person to check. It never removes a column and is never a final verdict. | Working decision |
+| 4 | **Feature confirmation:** features stay pending confirmation until the user approves them before training. The exact screen or step in the application is to be agreed with Team 3. | Pending (Team 3) |
+| 5 | **Handoff to Sumanth:** one JSON file per run, using the agreed output schema (`handoff_result.schema.json`). A move to an API can follow once Team 2 confirms the contract. | Working decision; API pending Team 2 |
+
+### When a human must confirm before training
+
+| Situation | Where it shows in the result | Who confirms |
+|---|---|---|
+| No target found | `target` is null, `problem_type` is `review_required` | User / project owner (business objective) |
+| Target only suggested by the system | `target_confirmed` false, `needs_confirmation` true | User |
+| Problem type unclear or goal cannot be met | `problem_type` `review_required`, warnings | User |
+| Target mostly missing (80% or more) or constant | `review_required`, warning | User / data owner |
+| Target 20% to 80% missing | Lower confidence and warning | User |
+| Leakage suspect found | `leakage_checks.suspects` (possible or strong) | User / data owner (correlation alone is not proof) |
+| Quality finding that blocks a column | `quality_blocked`, candidate priority `Blocked by quality` | Data owner / Vinitha |
+| Features not yet approved | `features_status` is `recommended_pending_confirmation` | User (screen to be agreed with Team 3) |
+| Run used a demo or override target | `target_source` is `user_override` | Project owner for the final objective |
