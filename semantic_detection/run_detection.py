@@ -57,6 +57,7 @@ from quality_integration import (
 from handoff_details import (
     feature_type_counts,
     missing_summary,
+    preprocessing_actions,
     preprocessing_hint,
     target_statistics,
     time_info,
@@ -185,7 +186,8 @@ def build_column_roles(group, target, time_columns, quality_by_column,
         else:
             role, reason = "feature", f"{kind} column usable as a model input."
             if entry["sensitive"]:
-                reason += " Sensitive; review fairness and privacy."
+                reason += (" Sensitive; not recommended until a privacy "
+                           "and fairness review.")
             if missing >= 20:
                 reason += f" {missing}% missing."
 
@@ -202,6 +204,9 @@ def build_column_roles(group, target, time_columns, quality_by_column,
         entry["preprocessing_hint"] = preprocessing_hint(
             role, kind, None if pd.isna(unique) else unique, missing,
             entry["time_axis"], problem_type)
+        entry["preprocessing_actions"] = preprocessing_actions(
+            role, kind, None if pd.isna(unique) else unique, missing,
+            entry["time_axis"], problem_type, entry["needs_privacy_review"])
         roles.append(entry)
     return roles
 
@@ -345,7 +350,17 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             warnings.append("Possible target leakage: " + x["message"])
         feature_names = [r["column"] for r in roles if r["role"] == "feature"]
         recommended = [r["column"] for r in roles
-                       if r["role"] == "feature" and not r["quality_blocked"]]
+                       if r["role"] == "feature" and not r["quality_blocked"]
+                       and not r["needs_privacy_review"]]
+        held_back = [r["column"] for r in roles
+                     if r["role"] == "feature" and r["needs_privacy_review"]
+                     and not r["quality_blocked"]]
+        if held_back:
+            warnings.append(
+                "Sensitive columns are not recommended until a privacy "
+                "review: " + ", ".join(held_back)
+                + ". They stay in feature_columns; the user must approve "
+                "them explicitly to use them")
         approved = None
         if approved_features is not None:
             given = approved_features.get(dataset) \

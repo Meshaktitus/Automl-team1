@@ -1,35 +1,38 @@
-{
-  "dataset": "HumanResources.Shift.xlsx",
-  "target": null,
-  "target_source": "none",
-  "problem_type": "review_required",
-  "confidence": 0.0,
-  "source": "data_rules",
-  "needs_confirmation": true,
-  "evidence": [],
-  "alternatives": [],
-  "warnings": [
-    "Profile for 'HumanResources.Shift.xlsx' could not be used: Profile has status 'failed': SOURCE_NOT_FOUND"
-  ],
-  "target_confirmed": false,
-  "target_statistics": null,
-  "candidates": [],
-  "semantic_columns": [],
-  "dataset_characteristics": {},
-  "feature_columns": [],
-  "recommended_feature_columns": [],
-  "approved_feature_columns": null,
-  "features_status": "recommended_pending_confirmation",
-  "column_roles": [],
-  "leakage_checks": {
-    "thresholds": {
-      "possible": 0.8,
-      "strong": 0.95
+[
+  {
+    "dataset": "HumanResources.Shift.xlsx",
+    "dataset_id": "HumanResources.Shift",
+    "target": null,
+    "target_source": "none",
+    "problem_type": "review_required",
+    "confidence": 0.0,
+    "source": "data_rules",
+    "needs_confirmation": true,
+    "evidence": [],
+    "alternatives": [],
+    "warnings": [
+      "Profile for 'HumanResources.Shift.xlsx' could not be used: Profile has status 'failed': READ_ERROR"
+    ],
+    "target_confirmed": false,
+    "target_statistics": null,
+    "candidates": [],
+    "semantic_columns": [],
+    "dataset_characteristics": {},
+    "feature_columns": [],
+    "recommended_feature_columns": [],
+    "approved_feature_columns": null,
+    "features_status": "recommended_pending_confirmation",
+    "column_roles": [],
+    "leakage_checks": {
+      "thresholds": {
+        "possible": 0.8,
+        "strong": 0.95
+      },
+      "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+      "suspects": [],
+      "status": "pending_integration",
+      "reason": "Dataset could not be analysed, so the leakage check was not run."
     },
-    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
-    "suspects": [],
-    "status": "pending_integration",
-    "reason": "Dataset could not be analysed, so the leakage check was not run."
-  },
-  "status": "Proposed, pending verification"
-}
+    "status": "Proposed, pending verification"
+  }
+]

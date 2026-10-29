@@ -97,7 +97,7 @@ Fields: `rank, candidate_target, semantic_type, suggested_problem_type, score, c
 
 ## 5. Column roles
 
-Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_count, missing_pct, sensitive, needs_privacy_review, time_axis, quality_blocked, quality_issues, quality_issue_codes, preprocessing_hint, leakage_suspect, leakage_correlation`. Quality findings with 0 affected rows are treated as a passed check and are not listed.
+Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_count, missing_pct, sensitive, needs_privacy_review, time_axis, quality_blocked, quality_issues, quality_issue_codes, preprocessing_hint, preprocessing_actions, leakage_suspect, leakage_correlation`. Use `preprocessing_actions` (fixed values, section 12.4), not the sentence `preprocessing_hint`. Quality findings with 0 affected rows are treated as a passed check and are not listed.
 
 | Role | Meaning | Use as a normal model input? |
 |---|---|---|
@@ -117,7 +117,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 
 **Leakage check (added after Sanjay's correlations arrived, 27 Oct).** It compares every column with the chosen target using the profile's `correlations[]`. A column with absolute correlation of at least 0.80 is `possible`, at least 0.95 is `strong`. These two thresholds are proposed defaults, not from the SRS, and can be changed (`leakage_settings`). A flagged column is **not removed**: it stays a feature with a warning, and the user decides. Status `checked` means the target was found in the correlations; `not_checked` means there is no target, or the target is not a numerical column (so it is not in the correlations); `pending_integration` means the profile had no correlations. **Limits:** numerical pairs only, straight-line relationships only; categorical targets, derived columns and time-based leakage are not detected.
 
-**Sensitive columns** have `sensitive` and `needs_privacy_review` true. They need an explicit privacy and fairness review before use.
+**Sensitive columns** have `sensitive` and `needs_privacy_review` true. They need an explicit privacy and fairness review before use, so they are **not recommended** until the user approves them (section 12.5).
 
 ## 6. Dataset characteristics and target statistics
 
@@ -130,7 +130,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 
 ## 7. Rules for the consumer (proposed)
 
-1. If `needs_confirmation` is true or `target_confirmed` is false, do not start training automatically. Show the target, problem type, evidence and alternatives to the user.
+1. If `needs_confirmation` is true or `target_confirmed` is false, do not start training automatically (refined in section 12.2: profiling and quality analysis are allowed, supervised training is not). Show the target, problem type, evidence and alternatives to the user.
 2. If `target_source` or `source` is `user_override`, follow it.
 3. If `target` is null or `problem_type` is `review_required`, ask the user for the business objective and target.
 4. Train on `approved_feature_columns` when it is not null. Otherwise treat `recommended_feature_columns` as a proposal.
@@ -837,3 +837,64 @@ These are current working decisions, not final approvals. Anything not listed he
 | Quality finding that blocks a column | `quality_blocked`, candidate priority `Blocked by quality` | Data owner / Vinitha |
 | Features not yet approved | `features_status` is `recommended_pending_confirmation` | User (screen to be agreed with Team 3) |
 | Run used a demo or override target | `target_source` is `user_override` | Project owner for the final objective |
+
+## 12. Contract for AutoML and preprocessing (proposed final; asked by Sinchana, 29 Oct)
+
+Status: **Proposed.** Not final until Sumanth (AutoML) and Meshak sign off. Original column names are never changed by this module.
+
+### 12.1 Mandatory and optional fields
+
+Every field in the schema is always present in the result, except `dataset_id`, which is null when the profile has none. "Mandatory" below means the fields AutoML and preprocessing **must read**. A trimmed example with only these is in `samples/output_Employee_mandatory_fields_only.json`; the full result is in `samples/output_Employee_with_user_target.json`.
+
+| Group | Fields | For |
+|---|---|---|
+| **Mandatory for AutoML** | `dataset_id` (the key), `target`, `target_confirmed`, `problem_type`, `needs_confirmation`, `features_status`, `feature_columns`, `recommended_feature_columns`, `approved_feature_columns`, `status` | AutoML |
+| **Mandatory for preprocessing** | `column_roles[]`: `column`, `role`, `semantic_type`, `preprocessing_actions`, `sensitive`, `needs_privacy_review`, `quality_blocked`, `time_axis` | Preprocessing |
+| **Optional (information for people)** | `confidence`, `source`, `target_source`, `evidence`, `alternatives`, `warnings`, `candidates`, `target_statistics`, `leakage_checks`, `dataset_characteristics`, `semantic_columns`, and in each role `reason`, `preprocessing_hint`, `quality_issues`, `leakage_suspect` | Frontend, review |
+
+### 12.2 When AutoML may train
+
+| Situation | Allowed before the person confirms | Not allowed until |
+|---|---|---|
+| Any problem type | Profiling and data-quality analysis, preprocessing preparation | |
+| `binary_classification`, `multiclass_classification`, `regression`, `forecasting` (need a target) | | `target_confirmed` is true **and** `needs_confirmation` is false, and the features are approved (`features_status` is `approved`) |
+| `clustering`, `anomaly_detection`, `recommendation` (no target) | | `needs_confirmation` is false (the problem type is confirmed) and the features are approved |
+| `review_required` | Profiling and quality analysis only | A person chooses a target or a problem type, and the module is run again |
+
+Sinchana's rule is adopted: if `target_confirmed` is false, AutoML may profile and analyse quality but must not start supervised training. `forecasting` also needs the date column whose role entry has `time_axis` true.
+
+### 12.3 Problem types: exact allowed values
+
+`binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required`. These exact lowercase strings are fixed by `handoff_result.schema.json`. `review_required` is not a trainable type: it means nothing can be recommended yet. **Pending Sumanth:** which of these AutoML supports, and whether it needs other names.
+
+### 12.4 Preprocessing: `preprocessing_actions` (fixed values)
+
+`preprocessing_hint` is one sentence for people. **Do not parse it.** Use `preprocessing_actions`, a list with these exact values:
+
+| Value | Meaning for the consumer |
+|---|---|
+| `use_as_target` | The target column; never a model input |
+| `label_encode` | Target of a classification: encode classes as labels (also check class balance) |
+| `do_not_use_as_input` | Identifier, email or phone: never a model input |
+| `keep_for_join` | Keep the column only to join tables |
+| `drop` | Audit metadata, constant, almost empty or unknown: drop |
+| `text_processing` | Free text: tokenise or embed, or leave out |
+| `extract_time_parts` | Time of day: extract hour or part of day |
+| `time_index` | Date that orders the data: time index for forecasting, source of lag features |
+| `extract_date_parts` | Date that describes a person or record (birth, hire): turn into age, duration, year or month |
+| `impute` | The feature has missing values: impute them |
+| `encode_binary` | Yes/no flag: encode as 0/1 |
+| `one_hot_encode` | Categorical with 15 or fewer values |
+| `frequency_or_target_encode` | Categorical with more than 15 values: do not one-hot encode |
+| `convert_percentage_to_number` | Percentage text: convert to a plain number |
+| `scale_if_needed` | Numeric: scale if the model needs it |
+| `privacy_review_before_use` | The column is sensitive: see 12.5 |
+
+These are recommendations. The module does not transform the data.
+
+### 12.5 Privacy
+
+- A column is sensitive when `sensitive` and `needs_privacy_review` are true (for example gender or marital status, and also identifiers such as national ID, and birth date).
+- **Proposed default (29 Oct):** a sensitive feature stays in `feature_columns`, but is **not** in `recommended_feature_columns`, and the result carries a warning. It is used for training only when the user approves it explicitly (`approved_features`). Before this change, sensitive features were recommended with a flag only. Decision to confirm: Meshak, Sinchana.
+- Preprocessing and AutoML must not use a sensitive column as a model input unless it is in `approved_feature_columns`. Original column names are kept, so privacy rules can be traced across stages.
+- Identifiers are never model inputs, whether sensitive or not.

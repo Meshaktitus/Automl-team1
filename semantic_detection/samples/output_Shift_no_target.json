@@ -1,208 +1,226 @@
-{
-  "dataset": "HumanResources.Shift.xlsx",
-  "target": null,
-  "target_source": "none",
-  "problem_type": "review_required",
-  "confidence": 0.3,
-  "source": "data_rules",
-  "needs_confirmation": true,
-  "evidence": [
-    "No target column selected."
-  ],
-  "alternatives": [],
-  "warnings": [
-    "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
-  ],
-  "target_confirmed": false,
-  "target_statistics": null,
-  "candidates": [
-    {
-      "rank": 1,
-      "candidate_target": "Name",
-      "semantic_type": "categorical",
-      "suggested_problem_type": "multiclass_classification",
-      "score": 63.0,
-      "confidence_level": "Low",
-      "priority": "Candidate",
-      "warnings": "No column clearly looks like an outcome; confirm the business objective",
-      "quality_issues": "",
-      "quality_issue_codes": [],
-      "blocking_reason": null
-    }
-  ],
-  "semantic_columns": [
-    {
-      "column": "ShiftID",
-      "semantic_type": "identifier",
-      "confidence": 0.99,
-      "sensitive": false
-    },
-    {
-      "column": "Name",
-      "semantic_type": "categorical",
-      "confidence": 0.7,
-      "sensitive": false
-    },
-    {
-      "column": "StartTime",
-      "semantic_type": "time",
-      "confidence": 0.95,
-      "sensitive": false
-    },
-    {
-      "column": "EndTime",
-      "semantic_type": "time",
-      "confidence": 0.95,
-      "sensitive": false
-    },
-    {
-      "column": "ModifiedDate",
-      "semantic_type": "date",
-      "confidence": 0.99,
-      "sensitive": false
-    }
-  ],
-  "dataset_characteristics": {
-    "row_count": 3,
-    "column_count": 5,
-    "duplicate_row_count": 0,
-    "profile_status": "warning",
-    "feature_column_count": 1,
-    "feature_type_counts": {
-      "numerical": 0,
-      "categorical": 1,
-      "boolean": 0,
-      "other": 0
-    },
-    "missing_summary": [],
-    "time_info": [],
-    "time_columns": [],
-    "identifier_columns": [
-      "ShiftID"
+[
+  {
+    "dataset": "HumanResources.Shift.xlsx",
+    "dataset_id": "HumanResources.Shift",
+    "target": null,
+    "target_source": "none",
+    "problem_type": "review_required",
+    "confidence": 0.3,
+    "source": "data_rules",
+    "needs_confirmation": true,
+    "evidence": [
+      "No target column selected."
     ],
-    "date_columns": [],
-    "sensitive_columns": [],
-    "excluded_columns": [
-      "ModifiedDate"
+    "alternatives": [],
+    "warnings": [
+      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
     ],
-    "validation_warnings": [
-      "Small dataset (3 rows); results may be unreliable."
-    ]
-  },
-  "feature_columns": [
-    "Name"
-  ],
-  "recommended_feature_columns": [
-    "Name"
-  ],
-  "approved_feature_columns": null,
-  "features_status": "recommended_pending_confirmation",
-  "column_roles": [
-    {
-      "column": "ShiftID",
-      "semantic_type": "identifier",
-      "data_type": "int64",
-      "unique_values": 3,
-      "missing_count": 0,
-      "missing_pct": 0.0,
-      "sensitive": false,
-      "needs_privacy_review": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "quality_issue_codes": [],
-      "role": "identifier",
-      "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
-      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
-      "leakage_suspect": null,
-      "leakage_correlation": null
+    "target_confirmed": false,
+    "target_statistics": null,
+    "candidates": [
+      {
+        "rank": 1,
+        "candidate_target": "Name",
+        "semantic_type": "categorical",
+        "suggested_problem_type": "multiclass_classification",
+        "score": 63.0,
+        "confidence_level": "Low",
+        "priority": "Candidate",
+        "warnings": "No column clearly looks like an outcome; confirm the business objective",
+        "quality_issue_codes": [],
+        "blocking_reason": null
+      }
+    ],
+    "semantic_columns": [
+      {
+        "column": "ShiftID",
+        "semantic_type": "identifier",
+        "confidence": 0.99,
+        "sensitive": false
+      },
+      {
+        "column": "Name",
+        "semantic_type": "categorical",
+        "confidence": 0.7,
+        "sensitive": false
+      },
+      {
+        "column": "StartTime",
+        "semantic_type": "time",
+        "confidence": 0.95,
+        "sensitive": false
+      },
+      {
+        "column": "EndTime",
+        "semantic_type": "time",
+        "confidence": 0.95,
+        "sensitive": false
+      },
+      {
+        "column": "ModifiedDate",
+        "semantic_type": "date",
+        "confidence": 0.99,
+        "sensitive": false
+      }
+    ],
+    "dataset_characteristics": {
+      "row_count": 3,
+      "column_count": 5,
+      "duplicate_row_count": 0,
+      "profile_status": "warning",
+      "feature_column_count": 1,
+      "feature_type_counts": {
+        "numerical": 0,
+        "categorical": 1,
+        "boolean": 0,
+        "other": 0
+      },
+      "missing_summary": [],
+      "time_info": [],
+      "time_columns": [],
+      "identifier_columns": [
+        "ShiftID"
+      ],
+      "date_columns": [],
+      "sensitive_columns": [],
+      "excluded_columns": [
+        "ModifiedDate"
+      ],
+      "validation_warnings": [
+        "Small dataset (3 rows); results may be unreliable."
+      ]
     },
-    {
-      "column": "Name",
-      "semantic_type": "categorical",
-      "data_type": "str",
-      "unique_values": 3,
-      "missing_count": 0,
-      "missing_pct": 0.0,
-      "sensitive": false,
-      "needs_privacy_review": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "quality_issue_codes": [],
-      "role": "feature",
-      "reason": "categorical column usable as a model input.",
-      "preprocessing_hint": "One-hot encode.",
-      "leakage_suspect": null,
-      "leakage_correlation": null
+    "feature_columns": [
+      "Name"
+    ],
+    "recommended_feature_columns": [
+      "Name"
+    ],
+    "approved_feature_columns": null,
+    "features_status": "recommended_pending_confirmation",
+    "column_roles": [
+      {
+        "column": "ShiftID",
+        "semantic_type": "identifier",
+        "data_type": "int64",
+        "unique_values": 3,
+        "missing_count": 0,
+        "missing_pct": 0.0,
+        "sensitive": false,
+        "needs_privacy_review": false,
+        "time_axis": false,
+        "quality_blocked": false,
+        "quality_issues": [],
+        "quality_issue_codes": [],
+        "role": "identifier",
+        "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
+        "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
+        "leakage_suspect": null,
+        "leakage_correlation": null
+      },
+      {
+        "column": "Name",
+        "semantic_type": "categorical",
+        "data_type": "str",
+        "unique_values": 3,
+        "missing_count": 0,
+        "missing_pct": 0.0,
+        "sensitive": false,
+        "needs_privacy_review": false,
+        "time_axis": false,
+        "quality_blocked": false,
+        "quality_issues": [],
+        "quality_issue_codes": [],
+        "role": "feature",
+        "reason": "categorical column usable as a model input.",
+        "preprocessing_hint": "One-hot encode.",
+        "preprocessing_actions": [
+          "one_hot_encode"
+        ],
+        "leakage_suspect": null,
+        "leakage_correlation": null
+      },
+      {
+        "column": "StartTime",
+        "semantic_type": "time",
+        "data_type": "object",
+        "unique_values": 3,
+        "missing_count": 0,
+        "missing_pct": 0.0,
+        "sensitive": false,
+        "needs_privacy_review": false,
+        "time_axis": false,
+        "quality_blocked": false,
+        "quality_issues": [],
+        "quality_issue_codes": [],
+        "role": "time",
+        "reason": "Time-of-day column.",
+        "preprocessing_hint": "Extract hour or part of day.",
+        "preprocessing_actions": [
+          "extract_time_parts"
+        ],
+        "leakage_suspect": null,
+        "leakage_correlation": null
+      },
+      {
+        "column": "EndTime",
+        "semantic_type": "time",
+        "data_type": "object",
+        "unique_values": 3,
+        "missing_count": 0,
+        "missing_pct": 0.0,
+        "sensitive": false,
+        "needs_privacy_review": false,
+        "time_axis": false,
+        "quality_blocked": false,
+        "quality_issues": [],
+        "quality_issue_codes": [],
+        "role": "time",
+        "reason": "Time-of-day column.",
+        "preprocessing_hint": "Extract hour or part of day.",
+        "preprocessing_actions": [
+          "extract_time_parts"
+        ],
+        "leakage_suspect": null,
+        "leakage_correlation": null
+      },
+      {
+        "column": "ModifiedDate",
+        "semantic_type": "date",
+        "data_type": "datetime64[us]",
+        "unique_values": 1,
+        "missing_count": 0,
+        "missing_pct": 0.0,
+        "sensitive": false,
+        "needs_privacy_review": false,
+        "time_axis": false,
+        "quality_blocked": false,
+        "quality_issues": [],
+        "quality_issue_codes": [],
+        "role": "excluded",
+        "reason": "Audit or technical metadata column.",
+        "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
+        "leakage_suspect": null,
+        "leakage_correlation": null
+      }
+    ],
+    "leakage_checks": {
+      "thresholds": {
+        "possible": 0.8,
+        "strong": 0.95
+      },
+      "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+      "suspects": [],
+      "status": "pending_integration",
+      "reason": "The profile has no correlations, so the check was not run."
     },
-    {
-      "column": "StartTime",
-      "semantic_type": "time",
-      "data_type": "object",
-      "unique_values": 3,
-      "missing_count": 0,
-      "missing_pct": 0.0,
-      "sensitive": false,
-      "needs_privacy_review": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "quality_issue_codes": [],
-      "role": "time",
-      "reason": "Time-of-day column.",
-      "preprocessing_hint": "Extract hour or part of day.",
-      "leakage_suspect": null,
-      "leakage_correlation": null
-    },
-    {
-      "column": "EndTime",
-      "semantic_type": "time",
-      "data_type": "object",
-      "unique_values": 3,
-      "missing_count": 0,
-      "missing_pct": 0.0,
-      "sensitive": false,
-      "needs_privacy_review": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "quality_issue_codes": [],
-      "role": "time",
-      "reason": "Time-of-day column.",
-      "preprocessing_hint": "Extract hour or part of day.",
-      "leakage_suspect": null,
-      "leakage_correlation": null
-    },
-    {
-      "column": "ModifiedDate",
-      "semantic_type": "date",
-      "data_type": "datetime64[us]",
-      "unique_values": 1,
-      "missing_count": 0,
-      "missing_pct": 0.0,
-      "sensitive": false,
-      "needs_privacy_review": false,
-      "time_axis": false,
-      "quality_blocked": false,
-      "quality_issues": [],
-      "quality_issue_codes": [],
-      "role": "excluded",
-      "reason": "Audit or technical metadata column.",
-      "preprocessing_hint": "Drop; not useful as a model input.",
-      "leakage_suspect": null,
-      "leakage_correlation": null
-    }
-  ],
-  "leakage_checks": {
-    "thresholds": {
-      "possible": 0.8,
-      "strong": 0.95
-    },
-    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
-    "suspects": [],
-    "status": "pending_integration",
-    "reason": "The profile has no correlations, so the check was not run."
-  },
-  "status": "Proposed, pending verification"
-}
+    "status": "Proposed, pending verification"
+  }
+]

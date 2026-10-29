@@ -1,6 +1,7 @@
 [
   {
     "dataset": "HumanResources.Department.xlsx",
+    "dataset_id": "HumanResources.Department",
     "target": null,
     "target_source": "none",
     "problem_type": "review_required",
@@ -124,6 +125,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -143,6 +148,9 @@
         "role": "feature",
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "Encode categories (many values: use frequency or target encoding, not one-hot).",
+        "preprocessing_actions": [
+          "frequency_or_target_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -162,6 +170,9 @@
         "role": "feature",
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "One-hot encode.",
+        "preprocessing_actions": [
+          "one_hot_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -181,6 +192,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       }
@@ -199,6 +213,7 @@
   },
   {
     "dataset": "HumanResources.Employee.xlsx",
+    "dataset_id": "HumanResources.Employee",
     "target": null,
     "target_source": "none",
     "problem_type": "review_required",
@@ -215,7 +230,8 @@
       }
     ],
     "warnings": [
-      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
+      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+      "Sensitive columns are not recommended until a privacy review: MaritalStatus, Gender. They stay in feature_columns; the user must approve them explicitly to use them"
     ],
     "target_confirmed": false,
     "target_statistics": null,
@@ -449,8 +465,6 @@
     "recommended_feature_columns": [
       "OrganizationLevel",
       "JobTitle",
-      "MaritalStatus",
-      "Gender",
       "SalariedFlag",
       "VacationHours",
       "SickLeaveHours"
@@ -474,6 +488,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -493,6 +511,11 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "privacy_review_before_use",
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -512,6 +535,11 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "privacy_review_before_use",
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -535,6 +563,9 @@
         "role": "text",
         "reason": "Free text; needs text processing before use.",
         "preprocessing_hint": "Text processing (tokenise or embed), or leave out.",
+        "preprocessing_actions": [
+          "text_processing"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -558,6 +589,10 @@
         "role": "feature",
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "Impute missing values (0.3%); one-hot encode.",
+        "preprocessing_actions": [
+          "impute",
+          "one_hot_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -577,6 +612,9 @@
         "role": "feature",
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "Encode categories (many values: use frequency or target encoding, not one-hot).",
+        "preprocessing_actions": [
+          "frequency_or_target_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -600,6 +638,10 @@
         "role": "date",
         "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
         "preprocessing_hint": "Turn into age, duration, year or month.",
+        "preprocessing_actions": [
+          "privacy_review_before_use",
+          "extract_date_parts"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -617,8 +659,12 @@
         "quality_issues": [],
         "quality_issue_codes": [],
         "role": "feature",
-        "reason": "categorical column usable as a model input. Sensitive; review fairness and privacy.",
+        "reason": "categorical column usable as a model input. Sensitive; not recommended until a privacy and fairness review.",
         "preprocessing_hint": "One-hot encode.",
+        "preprocessing_actions": [
+          "privacy_review_before_use",
+          "one_hot_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -636,8 +682,12 @@
         "quality_issues": [],
         "quality_issue_codes": [],
         "role": "feature",
-        "reason": "categorical column usable as a model input. Sensitive; review fairness and privacy.",
+        "reason": "categorical column usable as a model input. Sensitive; not recommended until a privacy and fairness review.",
         "preprocessing_hint": "One-hot encode.",
+        "preprocessing_actions": [
+          "privacy_review_before_use",
+          "one_hot_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -657,6 +707,9 @@
         "role": "date",
         "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
         "preprocessing_hint": "Turn into age, duration, year or month.",
+        "preprocessing_actions": [
+          "extract_date_parts"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -676,6 +729,9 @@
         "role": "feature",
         "reason": "boolean_flag column usable as a model input.",
         "preprocessing_hint": "Encode as 0/1.",
+        "preprocessing_actions": [
+          "encode_binary"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -695,6 +751,9 @@
         "role": "feature",
         "reason": "numerical_measure column usable as a model input.",
         "preprocessing_hint": "Scale if the model needs it.",
+        "preprocessing_actions": [
+          "scale_if_needed"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -714,6 +773,9 @@
         "role": "feature",
         "reason": "numerical_measure column usable as a model input.",
         "preprocessing_hint": "Scale if the model needs it.",
+        "preprocessing_actions": [
+          "scale_if_needed"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -733,6 +795,9 @@
         "role": "excluded",
         "reason": "Constant or empty column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -752,6 +817,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -771,6 +839,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       }
@@ -789,6 +860,7 @@
   },
   {
     "dataset": "HumanResources.EmployeeDepartmentHistory.xlsx",
+    "dataset_id": "HumanResources.EmployeeDepartmentHistory",
     "target": null,
     "target_source": "none",
     "problem_type": "review_required",
@@ -900,6 +972,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -919,6 +995,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -938,6 +1018,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -957,6 +1041,9 @@
         "role": "date",
         "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
         "preprocessing_hint": "Turn into age, duration, year or month.",
+        "preprocessing_actions": [
+          "extract_date_parts"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -980,6 +1067,9 @@
         "role": "excluded",
         "reason": "98.0% of values are missing.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -999,6 +1089,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       }
@@ -1017,6 +1110,7 @@
   },
   {
     "dataset": "HumanResources.EmployeePayHistory.xlsx",
+    "dataset_id": "HumanResources.EmployeePayHistory",
     "target": null,
     "target_source": "none",
     "problem_type": "review_required",
@@ -1160,6 +1254,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1179,6 +1277,9 @@
         "role": "date",
         "reason": "Date column that can act as a time axis.",
         "preprocessing_hint": "Use as the time index for forecasting; derive lag features.",
+        "preprocessing_actions": [
+          "time_index"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1202,6 +1303,9 @@
         "role": "feature",
         "reason": "financial_amount column usable as a model input.",
         "preprocessing_hint": "Scale if the model needs it.",
+        "preprocessing_actions": [
+          "scale_if_needed"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1221,6 +1325,9 @@
         "role": "feature",
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "One-hot encode.",
+        "preprocessing_actions": [
+          "one_hot_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1240,6 +1347,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       }
@@ -1258,6 +1368,7 @@
   },
   {
     "dataset": "HumanResources.JobCandidate.xlsx",
+    "dataset_id": "HumanResources.JobCandidate",
     "target": null,
     "target_source": "none",
     "problem_type": "review_required",
@@ -1357,6 +1468,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1380,6 +1495,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1399,6 +1518,10 @@
         "role": "text",
         "reason": "Free text; needs text processing before use.",
         "preprocessing_hint": "Text processing (tokenise or embed), or leave out.",
+        "preprocessing_actions": [
+          "privacy_review_before_use",
+          "text_processing"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1418,6 +1541,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       }
@@ -1436,6 +1562,7 @@
   },
   {
     "dataset": "HumanResources.Shift.xlsx",
+    "dataset_id": "HumanResources.Shift",
     "target": null,
     "target_source": "none",
     "problem_type": "review_required",
@@ -1550,6 +1677,10 @@
         "role": "identifier",
         "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
         "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+        "preprocessing_actions": [
+          "do_not_use_as_input",
+          "keep_for_join"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1569,6 +1700,9 @@
         "role": "feature",
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "One-hot encode.",
+        "preprocessing_actions": [
+          "one_hot_encode"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1588,6 +1722,9 @@
         "role": "time",
         "reason": "Time-of-day column.",
         "preprocessing_hint": "Extract hour or part of day.",
+        "preprocessing_actions": [
+          "extract_time_parts"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1607,6 +1744,9 @@
         "role": "time",
         "reason": "Time-of-day column.",
         "preprocessing_hint": "Extract hour or part of day.",
+        "preprocessing_actions": [
+          "extract_time_parts"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       },
@@ -1626,6 +1766,9 @@
         "role": "excluded",
         "reason": "Audit or technical metadata column.",
         "preprocessing_hint": "Drop; not useful as a model input.",
+        "preprocessing_actions": [
+          "drop"
+        ],
         "leakage_suspect": null,
         "leakage_correlation": null
       }

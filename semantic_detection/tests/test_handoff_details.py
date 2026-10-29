@@ -119,3 +119,44 @@ def test_counts_and_missing_summary():
         "numerical": 1, "categorical": 1, "boolean": 0, "other": 0}
     assert missing_summary(roles) == [
         {"column": "a", "missing_count": 2, "missing_pct": 1.0}]
+
+
+# Machine-readable preprocessing actions (29 Oct, Sinchana's question 4)
+from handoff_details import PREPROCESSING_ACTIONS, preprocessing_actions
+
+
+def acts(role, kind="numerical_measure", unique=50, missing=0.0,
+         axis=False, problem=None, privacy=False):
+    return preprocessing_actions(role, kind, unique, missing, axis,
+                                 problem, privacy)
+
+
+def test_actions_for_each_role():
+    assert acts("identifier") == ["do_not_use_as_input", "keep_for_join"]
+    assert acts("excluded") == ["drop"]
+    assert acts("text", "text") == ["text_processing"]
+    assert acts("time", "time") == ["extract_time_parts"]
+    assert acts("date", "date", axis=True) == ["time_index"]
+    assert acts("date", "date", axis=False) == ["extract_date_parts"]
+    assert acts("target", problem="regression") == ["use_as_target"]
+    assert acts("target", "boolean_flag", problem="binary_classification") \
+        == ["use_as_target", "label_encode"]
+
+
+def test_actions_for_feature_types():
+    assert acts("feature") == ["scale_if_needed"]
+    assert acts("feature", "boolean_flag", 2) == ["encode_binary"]
+    assert acts("feature", "categorical", 5) == ["one_hot_encode"]
+    assert acts("feature", "categorical", 60) == ["frequency_or_target_encode"]
+    assert acts("feature", "percentage") == [
+        "convert_percentage_to_number", "scale_if_needed"]
+    assert acts("feature", missing=12.0) == ["impute", "scale_if_needed"]
+
+
+def test_privacy_review_comes_first_and_every_value_is_allowed():
+    result = acts("feature", "categorical", 2, privacy=True)
+    assert result[0] == "privacy_review_before_use"
+    for role in ("target", "feature", "identifier", "excluded", "text",
+                 "time", "date"):
+        for value in acts(role, privacy=True, missing=5.0):
+            assert value in PREPROCESSING_ACTIONS

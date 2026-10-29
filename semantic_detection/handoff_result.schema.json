@@ -421,7 +421,8 @@
           "quality_issue_codes",
           "preprocessing_hint",
           "leakage_suspect",
-          "leakage_correlation"
+          "leakage_correlation",
+          "preprocessing_actions"
         ],
         "properties": {
           "column": {
@@ -521,6 +522,30 @@
             ],
             "minimum": -1,
             "maximum": 1
+          },
+          "preprocessing_actions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "use_as_target",
+                "label_encode",
+                "do_not_use_as_input",
+                "keep_for_join",
+                "drop",
+                "text_processing",
+                "extract_time_parts",
+                "time_index",
+                "extract_date_parts",
+                "impute",
+                "encode_binary",
+                "one_hot_encode",
+                "frequency_or_target_encode",
+                "convert_percentage_to_number",
+                "scale_if_needed",
+                "privacy_review_before_use"
+              ]
+            }
           }
         }
       }

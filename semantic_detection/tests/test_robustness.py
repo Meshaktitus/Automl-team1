@@ -286,3 +286,27 @@ def test_approved_features_can_be_given_by_dataset_id():
         r = run_detection([p], approved_features={key: ["a", "b"]})[0]
         assert r["approved_feature_columns"] == ["a", "b"], key
         assert r["features_status"] == "approved", key
+
+
+# Privacy: sensitive columns are not recommended until reviewed (29 Oct)
+def _with_sensitive():
+    return profile(BASE + [col("gender", "categorical", "str", unique=2,
+                               top=[{"value": "M", "count": 60,
+                                     "percentage": 60.0}])])
+
+
+def test_sensitive_feature_is_listed_but_not_recommended():
+    r = detect_dataset(_with_sensitive(), overrides={"d.xlsx": "a"})
+    assert "gender" in r["feature_columns"]
+    assert "gender" not in r["recommended_feature_columns"]
+    entry = [x for x in r["column_roles"] if x["column"] == "gender"][0]
+    assert entry["needs_privacy_review"] is True
+    assert entry["preprocessing_actions"][0] == "privacy_review_before_use"
+    assert "privacy review" in words(r)
+
+
+def test_sensitive_feature_can_be_used_when_the_user_approves_it():
+    r = detect_dataset(_with_sensitive(), overrides={"d.xlsx": "a"},
+                       approved_features=["gender", "b"])
+    assert r["approved_feature_columns"] == ["gender", "b"]
+    assert r["features_status"] == "approved"

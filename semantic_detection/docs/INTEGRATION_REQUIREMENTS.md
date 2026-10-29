@@ -82,10 +82,11 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 
 | # | Question or decision | Owner | Status |
 |---|---|---|---|
-| C1 | Does preprocessing need anything beyond `column_roles` (role, reason, preprocessing hint), semantic types and privacy flags? | Sinchana | **Pending** |
-| C2 | Which output fields are core for the first integration, and which stay optional? | Sumanth, Meshak | **Pending** |
-| C3 | What does AutoML take as input: the target, the problem type, `approved_feature_columns`? How should it treat `target_confirmed` false? | Sumanth | **Pending** |
-| C4 | Are the problem type names acceptable to AutoML (`binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `review_required`)? | Sumanth | **Pending** |
+| C1 | Does preprocessing need anything beyond `column_roles` (role, reason, preprocessing hint), semantic types and privacy flags? | Sinchana | **Answered (29 Oct):** the fields are a good starting point. She asked 4 clarifications; all four are answered in contract section 12 (proposed), awaiting her confirmation |
+| C2 | Which output fields are core for the first integration, and which stay optional? | Sumanth, Meshak | **Proposed** in contract section 12.1 (mandatory, mandatory for preprocessing, optional); sample `samples/output_Employee_mandatory_fields_only.json`; pending Sumanth |
+| C3 | What does AutoML take as input: the target, the problem type, `approved_feature_columns`? How should it treat `target_confirmed` false? | Sumanth | **Proposed** in contract section 12.2 (Sinchana's rule: profiling and quality analysis allowed, supervised training not until the target is confirmed); pending Sumanth |
+| C4 | Are the problem type names acceptable to AutoML? Exact values: `binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required` | Sumanth | **Proposed** in contract section 12.3; pending Sumanth (which ones AutoML supports) |
+| C5 | Sensitive columns: proposed default is **not recommended until the user approves them** (they stay in `feature_columns`). Confirm this default | Meshak, Sinchana | **Proposed** (contract section 12.5) |
 
 ## 6. Feature-approval requirements (pending step)
 
@@ -115,6 +116,8 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 | One JSON file per run for now, API later | Working decision (Meshak, 28 Oct); API pending Team 2 |
 | `VacationHours` as the demo target | Working decision (provisional) |
 | Thresholds, penalties, confidence values | Proposed defaults, not approved |
+| Preprocessing actions (fixed values) and mandatory versus optional fields | Proposed (contract section 12), pending Sumanth and Sinchana |
+| Sensitive features held back until approved | Proposed default (29 Oct), pending Meshak and Sinchana |
 | Feature-approval screen | Pending (Team 3) |
 | API and backend contract | Pending (Team 2) |
 
@@ -135,4 +138,4 @@ I cannot promise another team's time. The times in the last column are the times
 | 7 | Reviews and merge of PR #2 and PR #3 into `main` | Meshak, Sumanth, Sinchana | Today, 29 Oct |
 | 8 | Quality results: two assumptions to confirm (pay band 6.50 to 125.00 per hour for `Rate`; age range at hire) | Vinitha | Today, 29 Oct |
 
-My own items (prototype integration, 251 tests, schema, documents) are done and pushed. I continue prototype integration wherever the interfaces are compatible, and I update this document when anything is decided.
+My own items (prototype integration, 256 tests, schema, documents) are done and pushed. I continue prototype integration wherever the interfaces are compatible, and I update this document when anything is decided.

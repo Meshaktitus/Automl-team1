@@ -1,0 +1,229 @@
+{
+  "dataset": "HumanResources.Employee.xlsx",
+  "dataset_id": "HumanResources.Employee",
+  "target": "VacationHours",
+  "target_confirmed": true,
+  "problem_type": "regression",
+  "needs_confirmation": true,
+  "features_status": "recommended_pending_confirmation",
+  "feature_columns": [
+    "OrganizationLevel",
+    "JobTitle",
+    "MaritalStatus",
+    "Gender",
+    "SalariedFlag",
+    "SickLeaveHours"
+  ],
+  "recommended_feature_columns": [
+    "OrganizationLevel",
+    "JobTitle",
+    "SalariedFlag",
+    "SickLeaveHours"
+  ],
+  "approved_feature_columns": null,
+  "status": "Proposed, pending verification",
+  "column_roles": [
+    {
+      "column": "BusinessEntityID",
+      "role": "identifier",
+      "semantic_type": "identifier",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "do_not_use_as_input",
+        "keep_for_join"
+      ]
+    },
+    {
+      "column": "NationalIDNumber",
+      "role": "identifier",
+      "semantic_type": "identifier",
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "do_not_use_as_input",
+        "keep_for_join"
+      ]
+    },
+    {
+      "column": "LoginID",
+      "role": "identifier",
+      "semantic_type": "identifier",
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "do_not_use_as_input",
+        "keep_for_join"
+      ]
+    },
+    {
+      "column": "OrganizationNode",
+      "role": "text",
+      "semantic_type": "text",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "text_processing"
+      ]
+    },
+    {
+      "column": "OrganizationLevel",
+      "role": "feature",
+      "semantic_type": "categorical",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "impute",
+        "one_hot_encode"
+      ]
+    },
+    {
+      "column": "JobTitle",
+      "role": "feature",
+      "semantic_type": "categorical",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "frequency_or_target_encode"
+      ]
+    },
+    {
+      "column": "BirthDate",
+      "role": "date",
+      "semantic_type": "date",
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "extract_date_parts"
+      ]
+    },
+    {
+      "column": "MaritalStatus",
+      "role": "feature",
+      "semantic_type": "categorical",
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "one_hot_encode"
+      ]
+    },
+    {
+      "column": "Gender",
+      "role": "feature",
+      "semantic_type": "categorical",
+      "sensitive": true,
+      "needs_privacy_review": true,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "one_hot_encode"
+      ]
+    },
+    {
+      "column": "HireDate",
+      "role": "date",
+      "semantic_type": "date",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "extract_date_parts"
+      ]
+    },
+    {
+      "column": "SalariedFlag",
+      "role": "feature",
+      "semantic_type": "boolean_flag",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "encode_binary"
+      ]
+    },
+    {
+      "column": "VacationHours",
+      "role": "target",
+      "semantic_type": "numerical_measure",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "use_as_target"
+      ]
+    },
+    {
+      "column": "SickLeaveHours",
+      "role": "feature",
+      "semantic_type": "numerical_measure",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "scale_if_needed"
+      ]
+    },
+    {
+      "column": "CurrentFlag",
+      "role": "excluded",
+      "semantic_type": "boolean_flag",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "drop"
+      ]
+    },
+    {
+      "column": "rowguid",
+      "role": "excluded",
+      "semantic_type": "identifier",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "drop"
+      ]
+    },
+    {
+      "column": "ModifiedDate",
+      "role": "excluded",
+      "semantic_type": "date",
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "quality_blocked": false,
+      "time_axis": false,
+      "preprocessing_actions": [
+        "drop"
+      ]
+    }
+  ],
+  "_note": "Only the fields AutoML and preprocessing must read (proposed). All other fields in the full result are optional information for people. Full example: output_Employee_with_user_target.json"
+}

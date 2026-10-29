@@ -145,6 +145,53 @@ def preprocessing_hint(role, semantic_type, unique, missing_pct, time_axis,
     return "; ".join(parts).capitalize() + "."
 
 
+PREPROCESSING_ACTIONS = (
+    "use_as_target", "label_encode", "do_not_use_as_input", "keep_for_join",
+    "drop", "text_processing", "extract_time_parts", "time_index",
+    "extract_date_parts", "impute", "encode_binary", "one_hot_encode",
+    "frequency_or_target_encode", "convert_percentage_to_number",
+    "scale_if_needed", "privacy_review_before_use",
+)
+
+
+def preprocessing_actions(role, semantic_type, unique, missing_pct,
+                          time_axis, problem_type=None,
+                          needs_privacy_review=False):
+    """The same recommendation as preprocessing_hint, as a fixed list of
+    machine-readable values (see PREPROCESSING_ACTIONS), so a consumer
+    never has to read the sentence."""
+    actions = ["privacy_review_before_use"] if needs_privacy_review else []
+    if role == "target":
+        actions.append("use_as_target")
+        if str(problem_type).endswith("classification"):
+            actions.append("label_encode")
+    elif role == "identifier":
+        actions += ["do_not_use_as_input", "keep_for_join"]
+    elif role == "excluded":
+        actions.append("drop")
+    elif role == "text":
+        actions.append("text_processing")
+    elif role == "time":
+        actions.append("extract_time_parts")
+    elif role == "date":
+        actions.append("time_index" if time_axis else "extract_date_parts")
+    else:
+        if missing_pct and missing_pct > 0:
+            actions.append("impute")
+        if semantic_type == "boolean_flag":
+            actions.append("encode_binary")
+        elif semantic_type == "categorical":
+            if unique is not None and unique > ONE_HOT_MAX:
+                actions.append("frequency_or_target_encode")
+            else:
+                actions.append("one_hot_encode")
+        elif semantic_type == "percentage":
+            actions += ["convert_percentage_to_number", "scale_if_needed"]
+        else:
+            actions.append("scale_if_needed")
+    return actions
+
+
 def feature_type_counts(roles):
     """Counts of recommended feature columns by semantic type group."""
     groups = {"numerical": 0, "categorical": 0, "boolean": 0, "other": 0}
