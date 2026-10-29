@@ -39,7 +39,7 @@ Command line: `python run_detection.py --profiles <folder> [--quality file.json]
 | Field | Type | Meaning |
 |---|---|---|
 | `dataset` | string | Dataset name from the profile (`dataset_reference.name`, or `dataset_id` when there is no name) |
-| `dataset_id` | string or null | `dataset_reference.dataset_id` from the profile. Sanjay: the backend decides `name`, so use `dataset_id` as the key. Quality results and overrides may use either; a file ending such as `.xlsx` and capital letters are ignored when matching |
+| `dataset_id` | string or null | `dataset_reference.dataset_id` from the profile. Sanjay: the backend decides `name` (in his HR outputs it is the file name with its ending), so use `dataset_id` as the key; `dataset` is only a display name. Quality results and overrides may use either; a file ending such as `.xlsx` and capital letters are ignored when matching |
 | `target` | string or null | Suggested or chosen target. null when none can be suggested |
 | `target_source` | enum | `user_override`, `top_suggestion` or `none` |
 | `target_confirmed` | boolean | true only when the user chose the target. A suggested target is **not** confirmed |

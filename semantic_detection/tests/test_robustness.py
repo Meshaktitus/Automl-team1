@@ -241,3 +241,39 @@ def test_quality_finding_for_an_unknown_column_is_flagged():
     r = run(quality=q)
     assert "zzz" in words(r) and "ignored" in words(r)
     assert all(not x["quality_blocked"] for x in r["column_roles"])
+
+
+# Sanjay's profiling warnings and failed profiles (Thu 29 Oct)
+def test_failed_profile_keeps_its_dataset_id():
+    bad = profile(BASE, status="failed")
+    bad["dataset_reference"] = {"dataset_id": "HR.Broken",
+                                "name": "HR.Broken.xlsx"}
+    results = run_detection([profile(BASE), bad])
+    broken = [r for r in results if r["dataset"] == "HR.Broken.xlsx"][0]
+    assert broken["dataset_id"] == "HR.Broken"
+    assert broken["problem_type"] == "review_required"
+    assert "could not be used" in words(broken)
+
+
+def test_class_distribution_skipped_warning_does_not_break_the_run():
+    p = profile(BASE + [col("t", "numerical", "float64", unique=50,
+                            summary=N)], status="warning")
+    p["warnings"] = [{"code": "CLASS_DISTRIBUTION_SKIPPED",
+                      "severity": "warning", "column": "t",
+                      "message": "More than 20 distinct values."}]
+    r = detect_dataset(p, overrides={"d.xlsx": "t"})
+    assert r["target"] == "t" and r["problem_type"] == "regression"
+    assert r["target_statistics"]["class_distribution"] is None
+
+
+def test_numeric_target_with_few_values_uses_profile_class_distribution():
+    p = profile(BASE + [col("flag", "numerical", "int64", unique=2,
+                            summary={"min": 0.0, "max": 1.0, "mean": 0.2,
+                                     "median": 0.0, "std": 0.4})])
+    p["class_distribution"] = {
+        "target_column": "flag", "class_count": 2,
+        "classes": [{"value": 0, "count": 80, "percentage": 80.0},
+                    {"value": 1, "count": 20, "percentage": 20.0}]}
+    r = detect_dataset(p, overrides={"d.xlsx": "flag"})
+    assert r["problem_type"] == "binary_classification"
+    assert r["target_statistics"]["minority_class_pct"] == 20.0

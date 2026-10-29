@@ -226,15 +226,17 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             part = analyze_profile(loaded)
         except (ValueError, OSError) as error:
             # one bad profile must not stop the other datasets
-            unusable.append((_profile_label(profile), str(error)))
+            unusable.append((_profile_label(profile), str(error),
+                             _profile_id(profile)))
             continue
         if not part:
-            empty_profiles.append(dataset_name(loaded))
+            empty_profiles.append((dataset_name(loaded),
+                                   _profile_id(loaded)))
             continue
         if part[0]["dataset"] in profile_columns:
             unusable.append((part[0]["dataset"], "Dataset name appears in "
                              "more than one profile; only the first one "
-                             "was used"))
+                             "was used", _profile_id(loaded)))
             continue
         rows.extend(part)
         info = loaded["dataset"]
@@ -417,14 +419,14 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             "leakage_checks": leakage,
             "status": STATUS,
         })
-    for name, why in unusable:
+    for name, why, found_id in unusable:
         results.append(_placeholder_result(
             name, f"Profile for '{name}' could not be used: {why}",
-            leakage_settings))
-    for name in empty_profiles:
+            leakage_settings, found_id))
+    for name, found_id in empty_profiles:
         results.append(_placeholder_result(
             name, f"Profile for '{name}' has no columns, so nothing could "
-                  "be analysed", leakage_settings))
+                  "be analysed", leakage_settings, found_id))
     for name in unknown:
         results.append(_placeholder_result(
             name, f"Dataset '{name}' not found in the profiles",
@@ -440,11 +442,24 @@ def _profile_label(profile):
     return Path(str(profile)).name
 
 
-def _placeholder_result(name, warning, leakage_settings=None):
+def _profile_id(profile):
+    """dataset_id of a profile (a dict or a JSON file), or None."""
+    try:
+        if not isinstance(profile, dict):
+            with open(profile, encoding="utf-8") as handle:
+                profile = json.load(handle)
+        found = (profile.get("dataset_reference") or {}).get("dataset_id")
+        return str(found) if found else None
+    except (OSError, ValueError, AttributeError, TypeError):
+        return None
+
+
+def _placeholder_result(name, warning, leakage_settings=None,
+                        dataset_id=None):
     """Result for a dataset that could not be analysed (same fields as a
     normal result, so consumers need no special case)."""
     return {
-        "dataset": name, "dataset_id": None, "target": None,
+        "dataset": name, "dataset_id": dataset_id, "target": None,
         "target_source": "none",
         "problem_type": "review_required", "confidence": 0.0,
         "source": "data_rules", "needs_confirmation": True,

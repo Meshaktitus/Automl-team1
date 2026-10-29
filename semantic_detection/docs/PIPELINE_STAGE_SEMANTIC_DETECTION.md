@@ -1,7 +1,7 @@
 # Pipeline stage submission: Semantic Understanding, Target Detection and Problem Classification
 
 Owner: Samarth (Team 1). Date: Wednesday 28 October 2026. Requested by Meshak: inputs, outputs, target and problem-type handoff, unresolved dependencies, implemented versus proposed, samples.
-Labels: **Implemented** (built and tested, 247 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
+Labels: **Implemented** (built and tested, 250 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
 
 ## 1. Where this stage sits
 
@@ -71,7 +71,7 @@ Known gap: an unreadable quality file raises an error and stops the call (it is 
 |---|---|---|
 | 1 | **Received and integrated (28 Oct).** Final quality JSON for all 6 HR tables, in the agreed format, matched the profile names. Still her assumptions to confirm: pay band $6.50 to $125.00 for `Rate`, and the age-at-hire policy range | Vinitha |
 | 2 | **Answered (Sanjay, 28 Oct):** `name` is whatever the backend sends, so it is not reliable. Use `dataset_id` as the key. **Done:** quality results and overrides are matched by `dataset_id` or by name (ignoring a file ending and capitals), and `dataset_id` is in the output. Still to agree: the backend and Vinitha use the same `dataset_id` | Meshak (backend), Vinitha |
-| 3 | Profiling's `class_distribution` only exists when `target_column` is sent. **Tested (28 Oct) with Sanjay's `Gender` profile:** my code uses it (full distribution, minority class 28.97%). Sanjay skips targets that are identifiers, text, or have more than 20 distinct values. Still open: will the backend run profiling again after the user picks a target? | Meshak (backend) |
+| 3 | Profiling's `class_distribution` only exists when `target_column` is sent. **Tested (28 Oct) with Sanjay's `Gender` profile:** my code uses it (full distribution, minority class 28.97%). Sanjay's rule (29 Oct): a target gets a class distribution unless it is an identifier, text, or has more than 20 distinct values (warning `CLASS_DISTRIBUTION_SKIPPED`). So a 0/1 number does get one; `VacationHours` (100 distinct values) does not. My code handles both, and a failed profile (`status: failed`) gives a `review_required` result that keeps its `dataset_id`. Still open: will the backend run profiling again after the user picks a target? | Meshak (backend) |
 | 4 | **Answered (Sanjay, 28 Oct):** `JobCandidate.BusinessEntityID` is `likely_identifier: true` in his latest file (my earlier file was old). He says the flag is weak here: only 2 values present, both unique, name ends in "ID"; it is really a link to Employee. No action needed from me | Closed |
 | 5 | Agree the preprocessing fields (roles, hints, privacy flags) and who owns each | Sinchana, Sumanth, Meshak |
 | 6 | Features stay pending until the user approves them. **Working decision (Meshak, 28 Oct):** the exact screen or step is to be agreed with Team 3 | Team 3, Meshak |
