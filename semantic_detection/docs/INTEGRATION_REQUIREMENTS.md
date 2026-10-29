@@ -71,8 +71,8 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 
 | # | Question or decision | Why it matters | Status |
 |---|---|---|---|
-| F1 | Screen or step where the user confirms the target **and the problem type** (confirming only the target leaves `needs_confirmation` true) | Training must not start while `needs_confirmation` is true | **Pending** (to be agreed with Team 3) |
-| F2 | Screen or step where the user approves the features | `approved_feature_columns` stays null until then | **Pending** |
+| F1 | Screen or step where the user confirms the target **and the problem type** (confirming only the target leaves `needs_confirmation` true) | Training must not start while `needs_confirmation` is true | **Working decision (Meshak, 29 Oct 14:31):** one review screen in the Experiment Workspace under Problem Definition and Features (proposed by Team 3). Field mapping below is **Proposed** |
+| F2 | Screen or step where the user approves the features | `approved_feature_columns` stays null until then | **Working decision:** same single review screen (see F1). Field mapping **Proposed** |
 | F3 | What to show: confidence, evidence, alternative problem types, ranked target candidates | All are in the result | **Proposed** |
 | F4 | How to show warnings: leakage suspects, sensitive-column warning (for example Gender as a target), quality-blocked columns | A leakage flag is not proof; the `limits` text says what the check cannot see | **Proposed** |
 | F5 | Can the user override the problem type, and enter a business goal? | Both are accepted inputs | **Proposed** |
@@ -88,13 +88,25 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 | C4 | Are the problem type names acceptable to AutoML? Exact values: `binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required` | Sumanth | **Proposed** in contract section 12.3; pending Sumanth (which ones AutoML supports) |
 | C5 | Sensitive columns: proposed default is **not recommended until the user approves them** (they stay in `feature_columns`). Confirm this default | Meshak, Sinchana | **Proposed** (contract section 12.5) |
 
+## 5b. Review screen: working decision and proposed field mapping
+
+Working decision (Meshak, 29 Oct 14:31): follow Team 3's single review screen for problem type, target column and feature selection. This module supplies the suggested values. The user reviews, approves or changes them. The approved selections then go to preprocessing and model recommendation. The workflow and the field mapping stay **Proposed** until Team 2 confirms the API contract and Sinchana and Sumanth validate their input requirements.
+
+| User approval on the screen | Field that shows it | Status |
+|---|---|---|
+| Target confirmed | `target_confirmed` is true | Proposed |
+| Problem type confirmed | `needs_confirmation` is false | Proposed |
+| Features approved | `features_status` is `approved`, `approved_feature_columns` not null | Proposed |
+
+Training starts only when all three are done. If the user changes the target, the backend runs this module again with the new target, because candidates, statistics, leakage checks and recommended features depend on it (needs B5 from Team 2).
+
 ## 6. Feature-approval requirements (pending step)
 
 - The module recommends feature columns and never trains. A person approves them.
 - Until approval, `features_status` is `recommended_pending_confirmation` and `approved_feature_columns` is null.
 - After approval, the backend or frontend passes the approved list back as `approved_features` (a dictionary `{dataset_id: [columns]}`, or a plain list when there is one dataset), and the result then shows `features_status` `approved`. Columns in the list that are not usable features are dropped with a warning.
 - Identifiers, excluded columns and the target are never normal model inputs. A column with a blocking quality issue is not recommended. A leakage suspect is **flagged but still listed**; the person decides.
-- **Pending (Team 3, Team 2):** the screen or step, and who sends the approved list back.
+- **Working decision (29 Oct):** the screen is the single review screen (section 5b). **Pending (Team 2):** who sends the approved list back, and how it is stored (B5).
 
 ## 7. Known limitations (documented on purpose)
 
@@ -118,7 +130,7 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 | Thresholds, penalties, confidence values | Proposed defaults, not approved |
 | Preprocessing actions (fixed values) and mandatory versus optional fields | Proposed (contract section 12), pending Sumanth and Sinchana |
 | Sensitive features held back until approved | Proposed default (29 Oct), pending Meshak and Sinchana |
-| Feature-approval screen | Pending (Team 3) |
+| Single review screen for problem type, target and features | Working decision (Meshak, 29 Oct 14:31); field mapping Proposed (section 5b) |
 | API and backend contract | Pending (Team 2) |
 
 Nothing in this document is finalized yet.
@@ -130,7 +142,7 @@ I cannot promise another team's time. The times in the last column are the times
 | # | Blocker | Owner | Requested by |
 |---|---|---|---|
 | 1 | Backend contract: B1 to B8 above | Team 2 | Today, 29 Oct, end of day (at least B1, B3, B4) |
-| 2 | Feature-approval screen and the confirmation step: F1 to F6 | Team 3 | Today, 29 Oct, end of day |
+| 2 | Review screen details: F3 to F6 (F1 and F2 are a working decision, section 5b) | Team 3 | Today, 29 Oct, end of day |
 | 3 | Preprocessing fields: C1 | Sinchana | Today, 29 Oct |
 | 4 | AutoML input and field priority: C2 to C4 | Sumanth | Today, 29 Oct |
 | 5 | Approval of the proposed defaults (thresholds, confidence values) | Meshak | By Fri 30 Oct (sprint closure) |
