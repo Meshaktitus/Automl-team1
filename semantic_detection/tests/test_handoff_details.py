@@ -137,20 +137,21 @@ def test_actions_for_each_role():
     assert acts("text", "text") == ["text_processing"]
     assert acts("time", "time") == ["extract_time_parts"]
     assert acts("date", "date", axis=True) == ["time_index"]
-    assert acts("date", "date", axis=False) == ["extract_date_parts"]
+    assert acts("date", "date", axis=False) == ["extract_date_features"]
     assert acts("target", problem="regression") == ["use_as_target"]
     assert acts("target", "boolean_flag", problem="binary_classification") \
         == ["use_as_target", "label_encode"]
 
 
 def test_actions_for_feature_types():
-    assert acts("feature") == ["scale_if_needed"]
+    assert acts("feature") == ["scale_numeric"]
     assert acts("feature", "boolean_flag", 2) == ["encode_binary"]
     assert acts("feature", "categorical", 5) == ["one_hot_encode"]
-    assert acts("feature", "categorical", 60) == ["frequency_or_target_encode"]
+    assert acts("feature", "categorical", 60) == [
+        "group_rare_categories", "frequency_or_target_encode"]
     assert acts("feature", "percentage") == [
-        "convert_percentage_to_number", "scale_if_needed"]
-    assert acts("feature", missing=12.0) == ["impute", "scale_if_needed"]
+        "convert_percentage_to_number", "scale_numeric"]
+    assert acts("feature", missing=12.0) == ["impute", "scale_numeric"]
 
 
 def test_privacy_review_comes_first_and_every_value_is_allowed():

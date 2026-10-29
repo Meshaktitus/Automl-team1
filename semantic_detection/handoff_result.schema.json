@@ -536,13 +536,14 @@
                 "text_processing",
                 "extract_time_parts",
                 "time_index",
-                "extract_date_parts",
+                "extract_date_features",
                 "impute",
                 "encode_binary",
                 "one_hot_encode",
+                "group_rare_categories",
                 "frequency_or_target_encode",
                 "convert_percentage_to_number",
-                "scale_if_needed",
+                "scale_numeric",
                 "privacy_review_before_use"
               ]
             }

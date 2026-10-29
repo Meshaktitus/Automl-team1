@@ -98,6 +98,7 @@
       "quality_blocked": false,
       "time_axis": false,
       "preprocessing_actions": [
+        "group_rare_categories",
         "frequency_or_target_encode"
       ]
     },
@@ -111,7 +112,7 @@
       "time_axis": false,
       "preprocessing_actions": [
         "privacy_review_before_use",
-        "extract_date_parts"
+        "extract_date_features"
       ]
     },
     {
@@ -149,7 +150,7 @@
       "quality_blocked": false,
       "time_axis": false,
       "preprocessing_actions": [
-        "extract_date_parts"
+        "extract_date_features"
       ]
     },
     {
@@ -185,7 +186,7 @@
       "quality_blocked": false,
       "time_axis": false,
       "preprocessing_actions": [
-        "scale_if_needed"
+        "scale_numeric"
       ]
     },
     {

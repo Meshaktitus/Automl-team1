@@ -148,9 +148,10 @@ def preprocessing_hint(role, semantic_type, unique, missing_pct, time_axis,
 PREPROCESSING_ACTIONS = (
     "use_as_target", "label_encode", "do_not_use_as_input", "keep_for_join",
     "drop", "text_processing", "extract_time_parts", "time_index",
-    "extract_date_parts", "impute", "encode_binary", "one_hot_encode",
-    "frequency_or_target_encode", "convert_percentage_to_number",
-    "scale_if_needed", "privacy_review_before_use",
+    "extract_date_features", "impute", "encode_binary", "one_hot_encode",
+    "group_rare_categories", "frequency_or_target_encode",
+    "convert_percentage_to_number",
+    "scale_numeric", "privacy_review_before_use",
 )
 
 
@@ -174,7 +175,7 @@ def preprocessing_actions(role, semantic_type, unique, missing_pct,
     elif role == "time":
         actions.append("extract_time_parts")
     elif role == "date":
-        actions.append("time_index" if time_axis else "extract_date_parts")
+        actions.append("time_index" if time_axis else "extract_date_features")
     else:
         if missing_pct and missing_pct > 0:
             actions.append("impute")
@@ -182,13 +183,14 @@ def preprocessing_actions(role, semantic_type, unique, missing_pct,
             actions.append("encode_binary")
         elif semantic_type == "categorical":
             if unique is not None and unique > ONE_HOT_MAX:
-                actions.append("frequency_or_target_encode")
+                actions += ["group_rare_categories",
+                            "frequency_or_target_encode"]
             else:
                 actions.append("one_hot_encode")
         elif semantic_type == "percentage":
-            actions += ["convert_percentage_to_number", "scale_if_needed"]
+            actions += ["convert_percentage_to_number", "scale_numeric"]
         else:
-            actions.append("scale_if_needed")
+            actions.append("scale_numeric")
     return actions
 
 

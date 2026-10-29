@@ -149,6 +149,7 @@
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "Encode categories (many values: use frequency or target encoding, not one-hot).",
         "preprocessing_actions": [
+          "group_rare_categories",
           "frequency_or_target_encode"
         ],
         "leakage_suspect": null,
@@ -613,6 +614,7 @@
         "reason": "categorical column usable as a model input.",
         "preprocessing_hint": "Encode categories (many values: use frequency or target encoding, not one-hot).",
         "preprocessing_actions": [
+          "group_rare_categories",
           "frequency_or_target_encode"
         ],
         "leakage_suspect": null,
@@ -640,7 +642,7 @@
         "preprocessing_hint": "Turn into age, duration, year or month.",
         "preprocessing_actions": [
           "privacy_review_before_use",
-          "extract_date_parts"
+          "extract_date_features"
         ],
         "leakage_suspect": null,
         "leakage_correlation": null
@@ -708,7 +710,7 @@
         "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
         "preprocessing_hint": "Turn into age, duration, year or month.",
         "preprocessing_actions": [
-          "extract_date_parts"
+          "extract_date_features"
         ],
         "leakage_suspect": null,
         "leakage_correlation": null
@@ -752,7 +754,7 @@
         "reason": "numerical_measure column usable as a model input.",
         "preprocessing_hint": "Scale if the model needs it.",
         "preprocessing_actions": [
-          "scale_if_needed"
+          "scale_numeric"
         ],
         "leakage_suspect": null,
         "leakage_correlation": null
@@ -774,7 +776,7 @@
         "reason": "numerical_measure column usable as a model input.",
         "preprocessing_hint": "Scale if the model needs it.",
         "preprocessing_actions": [
-          "scale_if_needed"
+          "scale_numeric"
         ],
         "leakage_suspect": null,
         "leakage_correlation": null
@@ -1042,7 +1044,7 @@
         "reason": "Date that describes a record or person; usable after turning it into age, duration or similar.",
         "preprocessing_hint": "Turn into age, duration, year or month.",
         "preprocessing_actions": [
-          "extract_date_parts"
+          "extract_date_features"
         ],
         "leakage_suspect": null,
         "leakage_correlation": null
@@ -1304,7 +1306,7 @@
         "reason": "financial_amount column usable as a model input.",
         "preprocessing_hint": "Scale if the model needs it.",
         "preprocessing_actions": [
-          "scale_if_needed"
+          "scale_numeric"
         ],
         "leakage_suspect": null,
         "leakage_correlation": null

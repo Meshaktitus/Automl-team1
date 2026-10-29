@@ -881,13 +881,14 @@ Sinchana's rule is adopted: if `target_confirmed` is false, AutoML may profile a
 | `text_processing` | Free text: tokenise or embed, or leave out |
 | `extract_time_parts` | Time of day: extract hour or part of day |
 | `time_index` | Date that orders the data: time index for forecasting, source of lag features |
-| `extract_date_parts` | Date that describes a person or record (birth, hire): turn into age, duration, year or month |
+| `extract_date_features` | Date that describes a person or record (birth, hire): turn into age, duration, year or month |
 | `impute` | The feature has missing values: impute them |
 | `encode_binary` | Yes/no flag: encode as 0/1 |
 | `one_hot_encode` | Categorical with 15 or fewer values |
-| `frequency_or_target_encode` | Categorical with more than 15 values: do not one-hot encode |
+| `group_rare_categories` | Categorical with more than 15 values: first group rare values into one "other" group |
+| `frequency_or_target_encode` | Categorical with more than 15 values: do not one-hot encode; encode after grouping |
 | `convert_percentage_to_number` | Percentage text: convert to a plain number |
-| `scale_if_needed` | Numeric: scale if the model needs it |
+| `scale_numeric` | Numeric: scale if the model needs it |
 | `privacy_review_before_use` | The column is sensitive: see 12.5 |
 
 These are recommendations. The module does not transform the data.
