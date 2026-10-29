@@ -262,6 +262,9 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     datasets = list(report["dataset"].drop_duplicates())
 
     aliases = _aliases(datasets, dataset_ids)
+    if isinstance(approved_features, dict):
+        approved_features = {aliases.get(_key(d), d): c
+                             for d, c in approved_features.items()}
     overrides = {aliases.get(_key(d), d): c
                  for d, c in dict(overrides or {}).items()}
     unknown = [d for d in overrides if d not in datasets]

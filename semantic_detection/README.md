@@ -16,6 +16,7 @@ This module reads the profiling output (Sanjay) and the data quality output (Vin
 | See a real input and a real output | `samples/` |
 | See the test results and the open cases | `docs/TEST_REPORT.md` |
 | Read the rules behind the detection | `docs/SEMANTIC_PROBLEM_SPEC.md` |
+| See what the backend and frontend teams need to decide, and what is proposed versus finalized | `docs/INTEGRATION_REQUIREMENTS.md` |
 
 ## Run it
 

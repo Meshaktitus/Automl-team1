@@ -277,3 +277,12 @@ def test_numeric_target_with_few_values_uses_profile_class_distribution():
     r = detect_dataset(p, overrides={"d.xlsx": "flag"})
     assert r["problem_type"] == "binary_classification"
     assert r["target_statistics"]["minority_class_pct"] == 20.0
+
+
+def test_approved_features_can_be_given_by_dataset_id():
+    p = profile(BASE)
+    p["dataset_reference"] = {"dataset_id": "HR.D", "name": "d.xlsx"}
+    for key in ("HR.D", "d.xlsx", "d"):
+        r = run_detection([p], approved_features={key: ["a", "b"]})[0]
+        assert r["approved_feature_columns"] == ["a", "b"], key
+        assert r["features_status"] == "approved", key

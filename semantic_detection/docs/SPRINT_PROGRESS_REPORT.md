@@ -1,12 +1,12 @@
 # Progress report: Semantic Understanding, Target Detection and Problem Classification
 
-Owner: Samarth (Team 1). Report date: Wednesday 28 October 2026.
-Coverage: Sprint 1 Week 1 and the dated plan from Thu 22 Oct up to today (Wed 28 Oct). Nothing after today is reported.
+Owner: Samarth (Team 1). Report date: Thursday 29 October 2026.
+Coverage: Sprint 1 Week 1 and the dated plan from Thu 22 Oct up to today (Thu 29 Oct). Nothing after today is reported.
 Honest labels used below: **Implemented**, **Prototype**, **Design only**, **Blocked**, **Ready for review**.
 
 ## 1. Summary
 
-All planned work up to and including today (Wed 28 Oct) is complete. The module is Implemented and tested (250 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
+All planned work up to and including today (Thu 29 Oct) is complete on my side; what remains is confirmation from other teams (see section 5). The module is Implemented and tested (251 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
 
 ## 2. Plan versus status (through today)
 
@@ -35,6 +35,9 @@ All planned work up to and including today (Wed 28 Oct) is complete. The module 
 | Wed 28 Oct | Integrated detection module | Implemented | `run_detection.py` (profiling + quality + goal + overrides in one call) |
 | | Test report and unresolved-case list | Implemented | `docs/TEST_REPORT.md` |
 | | Updated interface contract | Ready for review | Contract revision 3 plus today's additions, `handoff_result.schema.json` |
+| Thu 29 Oct | Prototype integration with the draft contract (AutoML handoff: target, problem type, features as one JSON file per run) | Implemented (prototype); contract **Proposed** | `run_detection.py`, `handoff_result.schema.json`, 251 tests |
+| | Requirements and pending clarifications for Team 2, Team 3, Sinchana and Sumanth (proposed versus finalized, blockers, owners) | Implemented (document); answers **Pending** | `docs/INTEGRATION_REQUIREMENTS.md` |
+| | Document the numerical-target leakage limit and the pending feature-approval step | Implemented | `docs/INTEGRATION_REQUIREMENTS.md` sections 6 and 7, contract section 11 |
 
 ## 3. What the module does now
 
@@ -46,7 +49,7 @@ All planned work up to and including today (Wed 28 Oct) is complete. The module 
 - One entry point (`run_detection.py`) gives, per dataset: target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, recommended and approved feature columns, a role and preprocessing hint for every column, target statistics, dataset characteristics and validation warnings, and the leakage-check status.
 - Tested on HR data and on healthcare, banking, telecom, education and retail data, plus anonymous column names and an empty column. Nothing is hard-coded to HR.
 
-Size: about 2,900 lines of code, 250 test cases, 3 documents.
+Size: about 2,900 lines of code, 251 test cases, 3 documents.
 
 ## 4. Tuesday 27 Oct
 
@@ -68,7 +71,7 @@ Size: about 2,900 lines of code, 250 test cases, 3 documents.
 | Wrote the machine-readable output schema (JSON Schema) for the handoff result, with a test that checks real outputs against it. It caught one value the schema did not list (`User-selected` confidence level), fixed, and one unknown-dataset result with a different shape, fixed | `handoff_result.schema.json`, `test_handoff_schema.py` (8 tests) |
 | Cleaned the project: moved an old backup folder out, which was making the tests load an old file | Test run: 209 passed |
 
-Test count: 117 (Mon night) to 250 (today).
+Test count: 117 (Mon night) to 251 (today).
 
 ## 4b. Today's work (Wed 28 Oct), separate
 
@@ -81,20 +84,34 @@ Test count: 117 (Mon night) to 250 (today).
 | Meshak asked every owner for inputs, outputs, dependencies, error handling, implemented versus proposed, and samples. Verified each failure case on real code, fixed 3 weak spots (one bad profile no longer stops a run; duplicate dataset names; quality findings for unknown columns), and wrote the stage submission with 5 real sample files | `docs/PIPELINE_STAGE_SEMANTIC_DETECTION.md`, `samples/` |
 | Contract and spec updated with the new rules; progress report updated | `docs/HANDOFF_CONTRACT.md`, `docs/SEMANTIC_PROBLEM_SPEC.md` |
 
-Test count today: 217 to 250.
+Test count today: 217 to 251.
+
+## 4c. Today's work (Thu 29 Oct), separate
+
+| Work | Deliverable |
+|---|---|
+| Answered Meshak's readiness question: target detection, problem-type identification and the agreed output schema are verified; limits and proposed values stated | Message, `docs/PIPELINE_STAGE_SEMANTIC_DETECTION.md` |
+| Recorded Meshak's working decisions: `VacationHours` is a provisional demo target; thresholds, penalties and confidence values are proposed defaults; features stay pending until the user approves; one JSON file per run, API after Team 2 confirms | `docs/HANDOFF_CONTRACT.md` section 11 |
+| Wrote the table "When a human must confirm before training" | `docs/HANDOFF_CONTRACT.md` section 11 |
+| Followed Sanjay's corrections: class distribution is skipped only for identifiers, text or targets with more than 20 distinct values; a failed profile and the `CLASS_DISTRIBUTION_SKIPPED` warning are handled; `dataset_id` is the key. Fixed: a failed, duplicate or empty profile now keeps its `dataset_id` | `run_detection.py`, tests |
+| Found and fixed a bug while checking the feature-approval input: approved features were matched by display name only, so a backend sending `dataset_id` would have been ignored. Now both work (1 new test) | `run_detection.py`, `tests/test_robustness.py` |
+| Wrote the integration requirements for Team 2 (Backend) and Team 3 (Frontend), Sinchana and Sumanth: inputs, outputs, schema, API dependencies, feature-approval step, decisions needed, proposed versus finalized, blockers with owners and requested times. Documented that leakage is checked for numerical targets only | `docs/INTEGRATION_REQUIREMENTS.md` |
+| Test output on the six HR tables prepared for Sanjay | `six_tables_test_output.txt` (shared directly, not in the repo) |
+| Test count today: 250 to 251, all passing | Test run |
 
 ## 5. Open items and dependencies (not unfinished work)
 
 | Item | Status | Who |
 |---|---|---|
 | Target-leakage checks | **Partly implemented.** Uses Sanjay's correlations; flags (does not remove) columns with correlation of at least 0.80 with a numerical target. Categorical targets, derived columns and time-based leakage are not covered | Meshak to approve thresholds |
-| Real quality output for the HumanResources tables | Corrected Employee re-run received today as a text report (age-at-hire rule, 0 outliers). I typed it into JSON to test it. Still needed: the final output in the agreed JSON format with the agreed rule IDs and severities; one count (structural nulls, 2 records versus 1 in Sanjay's profile) to confirm; the other five tables | Vinitha |
+| Real quality output for the HumanResources tables | **Received and integrated (28 Oct):** the final quality JSON for all 6 tables, in the agreed format, with corrected counts. Still to confirm: her assumptions (pay band 6.50 to 125.00 per hour for `Rate`; age range at hire) | Vinitha |
 | Contract fields for preprocessing | Waiting for Sinchana's reply; interface not frozen | Sinchana, Sumanth, Meshak |
 | Quality penalty values (Medium x0.85, High x0.6, Blocking x0) | Not in the SRS; configurable proposed defaults, waiting for approval | Meshak |
-| HR demo business objective | `VacationHours` discussed as a possible target; final objective needs project-owner confirmation | Meshak, project owner |
+| HR demo business objective | Working decision (Meshak, 29 Oct): `VacationHours` is a provisional demo target. The final business objective and target need project-owner confirmation | Meshak, project owner |
 | Review and merge of PR #2 | Open, review requested | Meshak |
 | Pull request for the leakage check and schema | Open, base branch `samarth-contract-rev2` (merge after PR #2) | Meshak |
-| Where and how the user approves feature columns in the application | Open question | Meshak, Sumanth |
+| Where and how the user approves feature columns in the application | Working decision: features stay pending until the user approves; the screen is to be agreed with Team 3 | Team 3, Meshak |
+| Backend contract (how the module is called, `dataset_id`, storage of user decisions) and the API | Pending. API on hold until Team 2 confirms; questions B1 to B8 in `docs/INTEGRATION_REQUIREMENTS.md` | Team 2 |
 | Time-series gaps | Cannot be found from the profile; the field says so | Design limit |
 
 ## 6. Proposed follow-up tickets

@@ -1,0 +1,138 @@
+# Integration requirements: Semantic Understanding, Target Detection and Problem Classification
+
+Owner: Samarth (Team 1). Written Thu 29 Oct 2026 for Team 2 (Backend), Team 3 (Frontend), Sinchana (preprocessing) and Sumanth (AutoML).
+
+**Status labels used below**
+- **Finalized**: agreed by the people who own both sides.
+- **Proposed**: built and tested on my side, but not yet confirmed by the team that consumes it or approved as a requirement.
+- **Pending**: needs a decision or an answer. The owner is named.
+
+Everything this module returns is marked `Proposed, pending verification` until a person confirms it. API work stays pending until Team 2 confirms the backend contract. Until then the module runs as a Python function or a command line that writes one JSON file per run.
+
+## 1. What this stage does (one paragraph)
+
+It reads the profiling JSON (Sanjay) and the data-quality JSON (Vinitha) for each dataset. It proposes what each column means, which column could be the target, which problem type fits (binary classification, multiclass classification, regression, forecasting, clustering, or `review_required`), which columns are usable as features, and what to warn about. It never reads the raw data. It never decides alone: the user confirms the target and the features before training.
+
+## 2. Inputs
+
+| Input | Source | Format | Status |
+|---|---|---|---|
+| Profiling result, one per dataset | Sanjay (profiling module) | JSON, `schema_version` `1.0-draft`: `dataset_reference`, `dataset`, `columns[]`, optional `correlations[]`, optional `class_distribution` | **Proposed** (draft contract; `class_distribution` appears only when the profiling request includes `options.target_column`) |
+| Quality report for all datasets | Vinitha (quality engine) | JSON list `[{dataset, total_rows, issues[{rule_id, severity, affected_column, affected_rows, recommended_action}]}]`; rule IDs NULL_CHECK, DUP_ROW, INVALID_RANGE, OUTLIER_IQR; severities Info, Warning, Error, Blocking | **Proposed** (module owners agree; backend not yet confirmed) |
+| Business goal (optional) | User, through the frontend | Plain text, for example "forecast units sold" | **Proposed** |
+| Target chosen by the user (optional) | User, through the frontend | `{dataset_id: column}` | **Proposed** |
+| Problem type chosen by the user (optional) | User | One of the supported problem types | **Proposed** |
+| Approved features (optional) | User, through the frontend | List of column names | **Proposed** (the approval step itself is **Pending**, see section 6) |
+| Settings (optional) | Project owner | Leakage thresholds, quality penalties | **Proposed defaults**, configurable, not approved requirements |
+
+**Key for matching datasets: `dataset_id`** (Sanjay: `dataset_reference.name` is whatever the caller sends, so it is not guaranteed). Quality results and user choices may use `dataset_id` or the name; capitals and a file ending such as `.xlsx` are ignored.
+
+## 3. Outputs
+
+One result per dataset, in a list. The machine-readable format is `semantic_detection/handoff_result.schema.json` (JSON Schema 2020-12), checked by automatic tests. Field meanings are in `docs/HANDOFF_CONTRACT.md`, section 2. Examples are in `semantic_detection/samples/`.
+
+Most important fields for the other teams:
+
+| Field | Use |
+|---|---|
+| `dataset_id` | The key |
+| `target`, `target_source`, `target_confirmed` | Suggested or chosen target. `target_confirmed` is true only when the user chose it |
+| `problem_type`, `confidence`, `source`, `evidence`, `alternatives` | The recommendation and why. `confidence` is a rule-based score, not a probability |
+| `needs_confirmation` | true = a human must confirm before training. It stays true until the **problem type** is confirmed (the user overrides the problem type, or gives a business goal that fits the data). Choosing a target alone does not clear it |
+| `candidates[]` | Up to 5 ranked alternative targets, with score, confidence level, priority and quality notes |
+| `feature_columns`, `recommended_feature_columns`, `approved_feature_columns`, `features_status` | Features: possible, recommended, user-approved (null until approved) |
+| `column_roles[]` | Role and preprocessing hint for every column (for Sinchana) |
+| `leakage_checks` | Suspect columns with a flag level. A flag is not proof |
+| `warnings` | Show to the user |
+| `status` | Always `Proposed, pending verification` |
+
+Rules for any consumer (full list in the contract, section 7): do not start training while `needs_confirmation` is true or `target_confirmed` is false; if `target` is null or the type is `review_required`, ask the user for the business objective and the target; train only on `approved_feature_columns` when it is not null.
+
+## 4. When a person must confirm
+
+See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm before training"). Working decision from Meshak (28 Oct): features stay pending until the user approves them; the exact screen is to be agreed with Team 3.
+
+## 5. Decisions and confirmations needed, by team
+
+### Team 2 (Backend)
+
+| # | Question or decision | Why it matters | Status |
+|---|---|---|---|
+| B1 | How is the module called: Python function, one JSON file per run, or an API? | Today it is a function and a command line writing one JSON file per run | **Pending** (API on hold until Team 2 confirms the backend contract) |
+| B2 | Where do the profiling JSON and the quality JSON come from, and who passes them in? | The module takes file paths or loaded JSON | **Pending** |
+| B3 | Will `dataset_id` be the same in the profiling output, the quality output and the user's choices? | It is the matching key | **Pending** (Sanjay confirmed it is the key; Vinitha's JSON still uses the file name, which also matches) |
+| B4 | After the user picks a target, will the backend run profiling again with `options.target_column`? | Only then does the profile carry `class_distribution` (Sanjay skips identifiers, text, and targets with more than 20 distinct values) | **Pending** |
+| B5 | Where are the result and the user's decisions stored (confirmed target, approved features)? | The module is stateless: it returns the result, and the user's choices come back in as inputs | **Pending** |
+| B6 | How should a failed or unreadable profile be reported? | Today that dataset gets a `review_required` result with a warning, and the other datasets continue | **Proposed** |
+| B7 | Result schema versioning and error format | Today there is no version field in the result | **Pending** |
+| B8 | Where do the proposed thresholds live (leakage 0.80 and 0.95, quality penalties, weak-target 20% and 80%)? | They are configurable settings, not approved requirements | **Pending** |
+
+### Team 3 (Frontend)
+
+| # | Question or decision | Why it matters | Status |
+|---|---|---|---|
+| F1 | Screen or step where the user confirms the target **and the problem type** (confirming only the target leaves `needs_confirmation` true) | Training must not start while `needs_confirmation` is true | **Pending** (to be agreed with Team 3) |
+| F2 | Screen or step where the user approves the features | `approved_feature_columns` stays null until then | **Pending** |
+| F3 | What to show: confidence, evidence, alternative problem types, ranked target candidates | All are in the result | **Proposed** |
+| F4 | How to show warnings: leakage suspects, sensitive-column warning (for example Gender as a target), quality-blocked columns | A leakage flag is not proof; the `limits` text says what the check cannot see | **Proposed** |
+| F5 | Can the user override the problem type, and enter a business goal? | Both are accepted inputs | **Proposed** |
+| F6 | What goes back to the module after the user decides: chosen target, chosen problem type, approved features | These are the optional inputs in section 2 | **Pending** |
+
+### Sinchana (preprocessing) and Sumanth (AutoML)
+
+| # | Question or decision | Owner | Status |
+|---|---|---|---|
+| C1 | Does preprocessing need anything beyond `column_roles` (role, reason, preprocessing hint), semantic types and privacy flags? | Sinchana | **Pending** |
+| C2 | Which output fields are core for the first integration, and which stay optional? | Sumanth, Meshak | **Pending** |
+| C3 | What does AutoML take as input: the target, the problem type, `approved_feature_columns`? How should it treat `target_confirmed` false? | Sumanth | **Pending** |
+| C4 | Are the problem type names acceptable to AutoML (`binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `review_required`)? | Sumanth | **Pending** |
+
+## 6. Feature-approval requirements (pending step)
+
+- The module recommends feature columns and never trains. A person approves them.
+- Until approval, `features_status` is `recommended_pending_confirmation` and `approved_feature_columns` is null.
+- After approval, the backend or frontend passes the approved list back as `approved_features` (a dictionary `{dataset_id: [columns]}`, or a plain list when there is one dataset), and the result then shows `features_status` `approved`. Columns in the list that are not usable features are dropped with a warning.
+- Identifiers, excluded columns and the target are never normal model inputs. A column with a blocking quality issue is not recommended. A leakage suspect is **flagged but still listed**; the person decides.
+- **Pending (Team 3, Team 2):** the screen or step, and who sends the approved list back.
+
+## 7. Known limitations (documented on purpose)
+
+1. **Target leakage is checked for numerical targets only.** It uses the profile's pairwise correlations (Pearson, straight-line relationships). Categorical targets, derived columns and time-based leakage are not detected. A suspect is a flag for a person; correlation alone is not proof. Datasets with fewer than two numeric columns have no correlations, so the check reports `pending_integration`.
+2. Everything is computed from the profile. The module cannot see raw values, so it cannot check gaps in a time series.
+3. The HR tables have no outcome column. `Employee.VacationHours` is a provisional demo target; the final business objective needs the project owner.
+4. All confidence values and thresholds (including leakage 0.80 and 0.95, quality penalties, target missing 20% and 80%) are **proposed defaults**, not approved requirements.
+5. The module is a prototype. Forecasting and clustering recommendations are tested on example data.
+
+## 8. Proposed versus finalized
+
+| Item | Status |
+|---|---|
+| Output field list and schema (`handoff_result.schema.json`) | Proposed (draft contract) |
+| Profiling JSON contract 1.0-draft | Proposed (draft) |
+| Quality JSON format, rule IDs and severities | Proposed (module owners agree) |
+| `dataset_id` as the key | Proposed (confirmed by Sanjay, not yet by the backend) |
+| Features pending until the user approves them | Working decision (Meshak, 28 Oct) |
+| One JSON file per run for now, API later | Working decision (Meshak, 28 Oct); API pending Team 2 |
+| `VacationHours` as the demo target | Working decision (provisional) |
+| Thresholds, penalties, confidence values | Proposed defaults, not approved |
+| Feature-approval screen | Pending (Team 3) |
+| API and backend contract | Pending (Team 2) |
+
+Nothing in this document is finalized yet.
+
+## 9. Blockers, owners and requested times
+
+I cannot promise another team's time. The times in the last column are the times I am **asking for**, so the integration sprint ends on Fri 30 Oct. Each owner should confirm or change them.
+
+| # | Blocker | Owner | Requested by |
+|---|---|---|---|
+| 1 | Backend contract: B1 to B8 above | Team 2 | Today, 29 Oct, end of day (at least B1, B3, B4) |
+| 2 | Feature-approval screen and the confirmation step: F1 to F6 | Team 3 | Today, 29 Oct, end of day |
+| 3 | Preprocessing fields: C1 | Sinchana | Today, 29 Oct |
+| 4 | AutoML input and field priority: C2 to C4 | Sumanth | Today, 29 Oct |
+| 5 | Approval of the proposed defaults (thresholds, confidence values) | Meshak | By Fri 30 Oct (sprint closure) |
+| 6 | Final business objective and target for the HR demo | Project owner, through Meshak | By Fri 30 Oct |
+| 7 | Reviews and merge of PR #2 and PR #3 into `main` | Meshak, Sumanth, Sinchana | Today, 29 Oct |
+| 8 | Quality results: two assumptions to confirm (pay band 6.50 to 125.00 per hour for `Rate`; age range at hire) | Vinitha | Today, 29 Oct |
+
+My own items (prototype integration, 251 tests, schema, documents) are done and pushed. I continue prototype integration wherever the interfaces are compatible, and I update this document when anything is decided.
