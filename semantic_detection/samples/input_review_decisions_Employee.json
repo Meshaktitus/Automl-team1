@@ -1,0 +1,7 @@
+{
+  "dataset_id": "Employee",
+  "goal": null,
+  "target": "VacationHours",
+  "problem_type": "regression",
+  "approved_features": ["SickLeaveHours", "JobTitle", "HireDate"]
+}
