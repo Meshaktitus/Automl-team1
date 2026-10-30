@@ -1,0 +1,14 @@
+[
+  {"dataset": "HumanResources.Employee.xlsx", "total_rows": 290, "issues": [
+    {"rule_id": "NULL_CHECK", "severity": "Info", "affected_column": "OrganizationLevel", "affected_rows": 1, "recommended_action": "Root organizational node (CEO); expected structural null."},
+    {"rule_id": "NULL_CHECK", "severity": "Info", "affected_column": "OrganizationNode", "affected_rows": 1, "recommended_action": "Root organizational node (CEO); expected structural null."},
+    {"rule_id": "INVALID_RANGE", "severity": "Error", "affected_column": "BirthDate", "affected_rows": 2, "recommended_action": "Verify BirthDate/HireDate values; calculated age at hire falls outside legal/policy range."}]},
+  {"dataset": "HumanResources.Department.xlsx", "total_rows": 16, "issues": []},
+  {"dataset": "HumanResources.EmployeePayHistory.xlsx", "total_rows": 316, "issues": [
+    {"rule_id": "INVALID_RANGE", "severity": "Warning", "affected_column": "Rate", "affected_rows": 1, "recommended_action": "Verify pay rate against standard pay band limits ($6.50/hr to $125.00/hr)."}]},
+  {"dataset": "HumanResources.EmployeeDepartmentHistory.xlsx", "total_rows": 296, "issues": [
+    {"rule_id": "NULL_CHECK", "severity": "Info", "affected_column": "EndDate", "affected_rows": 290, "recommended_action": "Null EndDate indicates active department placement; no action needed."}]},
+  {"dataset": "HumanResources.JobCandidate.xlsx", "total_rows": 13, "issues": [
+    {"rule_id": "NULL_CHECK", "severity": "Info", "affected_column": "BusinessEntityID", "affected_rows": 11, "recommended_action": "Unlinked candidate profiles; normal for un-hired applicants."}]},
+  {"dataset": "HumanResources.Shift.xlsx", "total_rows": 3, "issues": []}
+]

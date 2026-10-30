@@ -174,6 +174,14 @@ def analyze_profile(profile):
             semantic_type = "text"
             confidence = max(confidence, 0.80)
             evidence = "Profiling classed the values as free text."
+        elif column["inferred_type"] == "mixed":
+            # text and numbers in one column: not safe to use as a target
+            # or a feature until the values are cleaned
+            alternatives.insert(0, semantic_type)
+            semantic_type = "unknown"
+            confidence = 0.50
+            evidence = ("Profiling found both text and numbers in this "
+                        "column; the type cannot be trusted.")
 
         rows.append({
             "dataset": name,
