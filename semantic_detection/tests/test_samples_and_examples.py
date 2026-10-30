@@ -16,7 +16,7 @@ SCHEMA = json.loads(
 PREPROCESSING_FIELDS = {"column", "role", "semantic_type",
                         "preprocessing_actions", "sensitive",
                         "needs_privacy_review", "quality_blocked",
-                        "time_axis"}
+                        "time_axis", "leakage_suspect"}
 ALL = sorted((ROOT / "samples").glob("output_*.json"))
 TRIMMED = [p for p in ALL if "mandatory_fields_only" in p.name]
 SAMPLES = [p for p in ALL if p not in TRIMMED]  # full outputs
@@ -94,7 +94,8 @@ def test_trimmed_sample_has_every_mandatory_field():
     mandatory_top = {"dataset_id", "target", "target_confirmed",
                      "problem_type", "needs_confirmation", "features_status",
                      "feature_columns", "recommended_feature_columns",
-                     "approved_feature_columns", "status", "column_roles"}
+                     "approved_feature_columns", "status", "column_roles",
+                     "leakage_checks"}
     for path in TRIMMED:
         for result in results_in(path):
             assert mandatory_top <= set(result)

@@ -5,7 +5,7 @@ Repo: github.com/Meshaktitus/Automl-team1, folder `semantic_detection/`. Latest 
 
 **Meshak's six review points (29 Oct) and the resolution of each:** `docs/HANDOFF_CONTRACT.md` section 13.
 
-**Document status: Proposed — Pending Review.**
+**Document status: Proposed — Pending Review.** Decisions of 30 Oct (Meshak, preprocessing): `docs/HANDOFF_CONTRACT.md` section 14 and `docs/INTEGRATION_REQUIREMENTS.md` section 11.
 
 **Approval status in one line:** no contract is approved yet. Everything below is **Proposed**, except the **working decisions** by Meshak (28-29 Oct), which are listed in section 12. All files are paths inside `semantic_detection/`.
 
@@ -57,6 +57,6 @@ Repo: github.com/Meshaktitus/Automl-team1, folder `semantic_detection/`. Latest 
 | Target missing values | 20 to 80 percent: -0.15; 80 percent or more, or constant: `review_required` (0.3) |
 | Leakage thresholds | possible 0.80, strong 0.95 |
 | Quality penalties and blocking rules | `quality_integration.py` settings; Blocking blocks a column (not for null, duplicate or key findings) |
-| Sensitive features not recommended until the user approves them | Proposed 29 Oct; pending Meshak and Sinchana |
+| Sensitive features not recommended until the user approves them | **Approved by Meshak (30 Oct)**; preprocessing agreement not recorded yet |
 | `preprocessing_actions` fixed values (incl. `scale_numeric`, `extract_date_features`, `group_rare_categories`) | Proposed; pending Sinchana |
 | Mandatory vs optional output fields; exact problem-type values | Proposed; pending Sumanth and Sinchana |

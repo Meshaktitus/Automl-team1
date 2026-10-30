@@ -80,7 +80,7 @@ These eight lowercase values are the only ones the module returns (`handoff_resu
 | `anomaly_detection`, `recommendation` | Not confirmed as implemented. Recommendation also needs interaction / user-item data, which this module cannot see |
 | `review_required` | Never trained |
 
-This module can still **recommend** a type that AutoML does not support yet. Proposed handling (pending Meshak, Sumanth and the frontend team): show the recommendation, but do not offer training for a type AutoML does not support. The module itself does not change.
+This module can still **recommend** a type that AutoML does not support yet. **Accepted by Meshak (30 Oct):** the screen may show the detected type (for example forecasting), but an unsupported type is clearly marked unsupported for training and training stays disabled. The module itself does not change. The frontend mapping is still Proposed.
 
 ## 4. When a person must confirm
 
@@ -116,7 +116,7 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 
 | # | Question or decision | Owner | Status |
 |---|---|---|---|
-| C1 | Does preprocessing need anything beyond `column_roles` (role, reason, preprocessing hint), semantic types and privacy flags? | Sinchana | **Answered (29 Oct):** the fields are a good starting point. She asked 4 clarifications; all four are answered in contract section 12 (proposed). She then asked for `scale_numeric`, `extract_date_features` and `group_rare_categories`: added (29 Oct); she is reviewing section 12.1 before confirming |
+| C1 | Does preprocessing need anything beyond `column_roles` (role, reason, preprocessing hint), semantic types and privacy flags? | Sinchana | **Answered (30 Oct):** on the Employee sample, the eight mandatory `column_roles[]` fields cover her preprocessing metadata needs. Contract 12.1 covers the semantic-detection handoff only, not her preprocessing request and response contract (`preprocessing_options`, prepared dataset, feature list, transformation steps, warnings, error details, fitted pipeline artifact storage and retrieval): that stays a separate **Pending** contract (preprocessing, backend). Two points raised (`target_confirmed` vs `needs_confirmation`; `SickLeaveHours` as a feature) are answered in contract section 14; a ninth field `leakage_suspect` is proposed. Contract stays **Proposed** |
 | C2 | Which output fields are core for the first integration, and which stay optional? | Sumanth, Meshak | **Partly answered (Sumanth, 30 Oct):** AutoML needs the dataset reference, confirmed problem type, target (where applicable), approved feature columns and dataset validation information. He will check the exact mandatory fields in contract 12.1 before confirming. **Pending** |
 | C3 | What does AutoML take as input: the target, the problem type, `approved_feature_columns`? How should it treat `target_confirmed` false? | Sumanth | **Answered (Sumanth, 30 Oct): the training rule in contract 12.2 is acceptable to AutoML.** Training only after the validation and approval checks. Supervised: confirmed target, problem type and approved features. Clustering and anomaly detection: no target. Recommendation: no conventional target, but needs interaction / user-item data. `review_required` is never trained. Still Proposed until Meshak approves |
 | C4 | Are the problem type names acceptable to AutoML? Exact values: `binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required` | Sumanth | **Answered (Sumanth, 30 Oct):** AutoML design covers `binary_classification`, `multiclass_classification` and `regression`. `forecasting` and `clustering` are planned extensions. `anomaly_detection` and `recommendation` are not confirmed as implemented. The working prototype mainly demonstrates regression. The names themselves were not objected to. **Pending:** exact mandatory fields (C2) |
@@ -199,4 +199,17 @@ Document stays **Proposed — Pending Review**. Resolutions are Proposed until r
 | 5 | Pending dependencies | Kept as Pending, nothing marked confirmed: Team 2 API contract (B1 to B8); Team 3 UI mapping (section 5b, F3 to F6); Sinchana's review of contract 12.1; Sumanth's required fields and problem types (C2 to C4); Vinitha's two assumptions (blocker 8) | Pending |
 
 PR status: PR #1 merged. PR #2 (`samarth-contract-rev2`) and PR #3 (`samarth-leakage-check`) are open, waiting for review. Do not merge PR #2 until Sinchana has reviewed 12.1.
+
+## 11. Decision log (Meshak, Fri 30 Oct 2026)
+
+Full list with sources: `docs/HANDOFF_CONTRACT.md` section 14.
+
+| # | Decision | Status |
+|---|---|---|
+| 1 | Defaults (confidence values, leakage 0.80 and 0.95, quality penalties) stay configurable and **Proposed** until the Project Management Team confirms approval | Proposed |
+| 2 | Sensitive columns not recommended by default; used only after explicit user approval | Approved by Meshak |
+| 3 | PR #3 retargeted to `main`; confirm PR #2 is fully included before closing it; delete old branches only after the merge; Meshak reviews PR #3 first | Agreed; merge pending his review |
+| 4 | Unsupported problem types are shown but marked unsupported, with training disabled | Accepted |
+| 5 | Final HR business objective and target column: Samarth contacts the Project Management Team today and shares the answer | **Pending** |
+| 6 | Preprocessing request and response contract (options, prepared dataset, transformation steps, fitted pipeline storage) | Pending (preprocessing, backend); outside this module |
 

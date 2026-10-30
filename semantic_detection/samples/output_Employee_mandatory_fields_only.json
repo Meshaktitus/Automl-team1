@@ -34,7 +34,8 @@
       "preprocessing_actions": [
         "do_not_use_as_input",
         "keep_for_join"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "NationalIDNumber",
@@ -48,7 +49,8 @@
         "privacy_review_before_use",
         "do_not_use_as_input",
         "keep_for_join"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "LoginID",
@@ -62,7 +64,8 @@
         "privacy_review_before_use",
         "do_not_use_as_input",
         "keep_for_join"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "OrganizationNode",
@@ -74,7 +77,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "text_processing"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "OrganizationLevel",
@@ -87,7 +91,8 @@
       "preprocessing_actions": [
         "impute",
         "one_hot_encode"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "JobTitle",
@@ -100,7 +105,8 @@
       "preprocessing_actions": [
         "group_rare_categories",
         "frequency_or_target_encode"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "BirthDate",
@@ -113,7 +119,8 @@
       "preprocessing_actions": [
         "privacy_review_before_use",
         "extract_date_features"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "MaritalStatus",
@@ -126,7 +133,8 @@
       "preprocessing_actions": [
         "privacy_review_before_use",
         "one_hot_encode"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "Gender",
@@ -139,7 +147,8 @@
       "preprocessing_actions": [
         "privacy_review_before_use",
         "one_hot_encode"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "HireDate",
@@ -151,7 +160,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "extract_date_features"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "SalariedFlag",
@@ -163,7 +173,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "encode_binary"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "VacationHours",
@@ -175,7 +186,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "use_as_target"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "SickLeaveHours",
@@ -187,7 +199,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "scale_numeric"
-      ]
+      ],
+      "leakage_suspect": "strong"
     },
     {
       "column": "CurrentFlag",
@@ -199,7 +212,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "drop"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "rowguid",
@@ -211,7 +225,8 @@
       "time_axis": false,
       "preprocessing_actions": [
         "drop"
-      ]
+      ],
+      "leakage_suspect": null
     },
     {
       "column": "ModifiedDate",
@@ -223,8 +238,26 @@
       "time_axis": false,
       "preprocessing_actions": [
         "drop"
-      ]
+      ],
+      "leakage_suspect": null
     }
   ],
-  "_note": "Only the fields AutoML and preprocessing must read (proposed). All other fields in the full result are optional information for people. Full example: output_Employee_with_user_target.json"
+  "_note": "Only the fields AutoML and preprocessing must read (proposed). All other fields in the full result are optional information for people. Full example: output_Employee_with_user_target.json",
+  "leakage_checks": {
+    "thresholds": {
+      "possible": 0.8,
+      "strong": 0.95
+    },
+    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+    "suspects": [
+      {
+        "column": "SickLeaveHours",
+        "correlation": 0.9783,
+        "level": "strong",
+        "message": "'SickLeaveHours' moves almost together with the target (correlation +0.98). Check that it is known before the outcome and is not a copy of it."
+      }
+    ],
+    "status": "checked",
+    "reason": "1 column(s) at or above 0.80"
+  }
 }
