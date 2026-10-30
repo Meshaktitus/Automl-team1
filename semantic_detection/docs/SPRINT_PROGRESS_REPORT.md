@@ -1,12 +1,12 @@
 # Progress report: Semantic Understanding, Target Detection and Problem Classification
 
-Owner: Samarth (Team 1). Report date: Thursday 29 October 2026.
-Coverage: Sprint 1 Week 1 and the dated plan from Thu 22 Oct up to today (Thu 29 Oct). Nothing after today is reported.
+Owner: Samarth (Team 1). Report date: Friday 30 October 2026 (sprint closure).
+Coverage: Sprint 1 Week 1 and the dated plan from Thu 22 Oct up to today (Fri 30 Oct, sprint closure). Nothing after today is reported.
 Honest labels used below: **Implemented**, **Prototype**, **Design only**, **Blocked**, **Ready for review**.
 
 ## 1. Summary
 
-All planned work up to and including today (Thu 29 Oct) is complete on my side; what remains is confirmation from other teams (see section 5). The module is Implemented and tested (281 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
+All planned work up to and including today (Fri 30 Oct, sprint closure) is complete on my side; what remains is confirmation from other teams (see section 5). The module is Implemented and tested (281 test cases, all passing), the code is on GitHub (PR #1 merged; PR #2 closed on 30 Oct because PR #3 contains all of it; PR #3, based on `main`, open for review), and the written deliverables exist in `semantic_detection/docs/`. All work is in one branch (`samarth-leakage-check`, PR #3, based on `main`). Document status: **Proposed — Pending Review**. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
 
 ## 2. Plan versus status (through today)
 
@@ -38,6 +38,7 @@ All planned work up to and including today (Thu 29 Oct) is complete on my side; 
 | Thu 29 Oct | Prototype integration with the draft contract (AutoML handoff: target, problem type, features as one JSON file per run) | Implemented (prototype); contract **Proposed** | `run_detection.py`, `handoff_result.schema.json`, 281 tests |
 | | Requirements and pending clarifications for Team 2, Team 3, Sinchana and Sumanth (proposed versus finalized, blockers, owners) | Implemented (document); answers **Pending** | `docs/INTEGRATION_REQUIREMENTS.md` |
 | | Document the numerical-target leakage limit and the pending feature-approval step | Implemented | `docs/INTEGRATION_REQUIREMENTS.md` sections 6 and 7, contract section 11 |
+| Fri 30 Oct | Sprint closure: record decisions, branch cleanup, final summary | Implemented; contract **Proposed** | Section 4d, `docs/HANDOFF_CONTRACT.md` section 14, `docs/INTEGRATION_REQUIREMENTS.md` section 11 |
 
 ## 3. What the module does now
 
@@ -98,7 +99,23 @@ Test count today: 217 to 281.
 | Wrote the integration requirements for Team 2 (Backend) and Team 3 (Frontend), Sinchana and Sumanth: inputs, outputs, schema, API dependencies, feature-approval step, decisions needed, proposed versus finalized, blockers with owners and requested times. Documented that leakage is checked for numerical targets only | `docs/INTEGRATION_REQUIREMENTS.md` |
 | Answered Sinchana's 4 clarifications (preprocessing): fixed-value `preprocessing_actions` added next to the free-text hint; sensitive features are no longer recommended until the user approves them (proposed default, found while checking her privacy question); mandatory versus optional fields, the training rule (no supervised training until the target is confirmed) and the exact problem-type values written down; trimmed sample added | `docs/HANDOFF_CONTRACT.md` section 12, `handoff_details.py`, `run_detection.py`, `samples/` |
 | Test output on the six HR tables prepared for Sanjay | `six_tables_test_output.txt` (shared directly, not in the repo) |
+| Recorded the lead's decision to use Team 3's single review screen for problem type, target and features (field mapping **Proposed**) | `docs/INTEGRATION_REQUIREMENTS.md` section 5b |
+| Evidence pack for the lead's 12-item request: index of artifacts with Proposed/approved status, a schema and sample for the review-screen payload, the full test run | `docs/EVIDENCE_INDEX.md`, `review_decisions.schema.json`, `docs/TEST_EXECUTION_EVIDENCE.txt` |
+| Fixed the lead's review points: regenerated the four contract examples (sensitive features were still recommended in one), one name `approved_feature_columns` everywhere, explained `target_confirmed` versus `needs_confirmation`, explained that `status` is neither approval nor runtime status, aligned the problem-type lists | `docs/HANDOFF_CONTRACT.md` section 13, `docs/INTEGRATION_REQUIREMENTS.md` section 10 |
+| Added the training-eligibility rules as code with 9 tests, and 16 tests that check every sample and example against the schema | `training_rules.py`, `tests/test_training_rules.py`, `tests/test_samples_and_examples.py` |
+| Classification and regression demo with saved output (stand-in profile, not the profiling module) | `demo_end_to_end.py`, `docs/DEMO_EVIDENCE_classification_regression.txt` |
 | Test count today: 250 to 281, all passing | Test run |
+
+## 4d. Today's work (Fri 30 Oct, sprint closure), separate
+
+| Work | Deliverable |
+|---|---|
+| Windows blocked a pandas file in my main environment. Made a fresh environment with another pandas version and ran the full suite on my own laptop: 281 passed. Ran the demo live | Local test run, `demo_end_to_end.py` |
+| Recorded AutoML's answers: the design covers binary classification, multiclass classification and regression; forecasting and clustering are planned; anomaly detection and recommendation are not confirmed; the training rule in 12.2 is acceptable. The mandatory fields in 12.1 are still to be checked by AutoML | `docs/INTEGRATION_REQUIREMENTS.md` sections 3b and 5, contract section 13 |
+| Recorded the lead's decisions: defaults stay **Proposed** until the Project Management Team confirms; sensitive columns approved as not recommended by default; unsupported problem types are shown but marked unsupported with training disabled; PR #3 may go to `main` | `docs/HANDOFF_CONTRACT.md` section 14, `docs/INTEGRATION_REQUIREMENTS.md` section 11 |
+| Recorded the preprocessing review: the eight `column_roles[]` fields cover its metadata needs; its own request/response contract is separate and pending. Found a gap she exposed: the trimmed sample hid the leakage flag of `SickLeaveHours`. Fixed the sample, proposed `leakage_suspect` as a ninth mandatory field | `samples/output_Employee_mandatory_fields_only.json`, contract section 14 |
+| Branches: deleted the old merged branch, confirmed that all of PR #2 is inside PR #3 (`git merge-base --is-ancestor` returned 0), closed PR #2 without merging, updated the description of PR #3 (based on `main`) | GitHub |
+| Final summary for sprint closure | This report |
 
 ## 5. Open items and dependencies (not unfinished work)
 
@@ -106,11 +123,11 @@ Test count today: 217 to 281.
 |---|---|---|
 | Target-leakage checks | **Partly implemented.** Uses Sanjay's correlations; flags (does not remove) columns with correlation of at least 0.80 with a numerical target. Categorical targets, derived columns and time-based leakage are not covered | Meshak to approve thresholds |
 | Real quality output for the HumanResources tables | **Received and integrated (28 Oct):** the final quality JSON for all 6 tables, in the agreed format, with corrected counts. Still to confirm: her assumptions (pay band 6.50 to 125.00 per hour for `Rate`; age range at hire) | Vinitha |
-| Contract fields for preprocessing | Waiting for Sinchana's reply; interface not frozen | Sinchana, Sumanth, Meshak |
-| Quality penalty values (Medium x0.85, High x0.6, Blocking x0) | Not in the SRS; configurable proposed defaults, waiting for approval | Meshak |
-| HR demo business objective | Working decision (Meshak, 29 Oct): `VacationHours` is a provisional demo target. The final business objective and target need project-owner confirmation | Meshak, project owner |
-| Review and merge of PR #2 | Open, review requested | Meshak |
-| Pull request for the leakage check and schema | Open, base branch `samarth-contract-rev2` (merge after PR #2) | Meshak |
+| Contract fields for preprocessing | **Partly answered (30 Oct):** the eight `column_roles[]` fields cover the metadata needs; a ninth field (`leakage_suspect`) is proposed; the preprocessing request/response contract is a separate pending contract. Contract stays **Proposed** | Sinchana, Meshak |
+| Quality penalty values and all other defaults (Medium x0.85, High x0.6, Blocking x0; confidence values; leakage 0.80 and 0.95) | Configurable proposed defaults. Stay **Proposed** until the Project Management Team confirms (lead, 30 Oct) | Meshak, Project Management Team |
+| HR demo business objective | Working decision (29 Oct): `VacationHours` is a provisional demo target. The final objective and target must be confirmed by the Project Management Team; the lead was asked to request it (30 Oct). **Pending** | Meshak, Project Management Team |
+| PR #2 | **Closed on 30 Oct** without merging; all its commits are in PR #3 | Done |
+| PR #3 (all work, based on `main`) | Open; the lead reviews it before approving the merge. After the merge my two old branches are deleted | Meshak |
 | Where and how the user approves feature columns in the application | Working decision: features stay pending until the user approves; the screen is to be agreed with Team 3 | Team 3, Meshak |
 | Backend contract (how the module is called, `dataset_id`, storage of user decisions) and the API | Pending. API on hold until Team 2 confirms; questions B1 to B8 in `docs/INTEGRATION_REQUIREMENTS.md` | Team 2 |
 | Time-series gaps | Cannot be found from the profile; the field says so | Design limit |
