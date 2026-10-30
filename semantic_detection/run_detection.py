@@ -213,10 +213,11 @@ def build_column_roles(group, target, time_columns, quality_by_column,
 
 def run_detection(profiles, quality=None, goal=None, overrides=None,
                   problem_type_override=None, quality_dataset=None,
-                  quality_settings=None, approved_features=None,
+                  quality_settings=None, approved_feature_columns=None,
                   leakage_settings=None):
-    """approved_features: optional {dataset: [columns]} (or a plain list when
-    there is one dataset) that the user has approved for training."""
+    """approved_feature_columns: optional {dataset: [columns]} (or a plain
+    list when there is one dataset) that the user has approved for
+    training. Same name as the result field."""
     rows = []
     characteristics = {}
     profile_columns = {}
@@ -267,9 +268,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     datasets = list(report["dataset"].drop_duplicates())
 
     aliases = _aliases(datasets, dataset_ids)
-    if isinstance(approved_features, dict):
-        approved_features = {aliases.get(_key(d), d): c
-                             for d, c in approved_features.items()}
+    if isinstance(approved_feature_columns, dict):
+        approved_feature_columns = {
+            aliases.get(_key(d), d): c
+            for d, c in approved_feature_columns.items()}
     overrides = {aliases.get(_key(d), d): c
                  for d, c in dict(overrides or {}).items()}
     unknown = [d for d in overrides if d not in datasets]
@@ -362,10 +364,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
                 + ". They stay in feature_columns; the user must approve "
                 "them explicitly to use them")
         approved = None
-        if approved_features is not None:
-            given = approved_features.get(dataset) \
-                if isinstance(approved_features, dict) else (
-                    approved_features if len(datasets) == 1 else None)
+        if approved_feature_columns is not None:
+            given = approved_feature_columns.get(dataset) \
+                if isinstance(approved_feature_columns, dict) else (
+                    approved_feature_columns if len(datasets) == 1 else None)
             if given is not None:
                 approved = [c for c in given if c in feature_names]
                 rejected = [c for c in given if c not in feature_names]

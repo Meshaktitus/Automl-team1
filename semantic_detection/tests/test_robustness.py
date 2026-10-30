@@ -279,11 +279,11 @@ def test_numeric_target_with_few_values_uses_profile_class_distribution():
     assert r["target_statistics"]["minority_class_pct"] == 20.0
 
 
-def test_approved_features_can_be_given_by_dataset_id():
+def test_approved_feature_columns_can_be_given_by_dataset_id():
     p = profile(BASE)
     p["dataset_reference"] = {"dataset_id": "HR.D", "name": "d.xlsx"}
     for key in ("HR.D", "d.xlsx", "d"):
-        r = run_detection([p], approved_features={key: ["a", "b"]})[0]
+        r = run_detection([p], approved_feature_columns={key: ["a", "b"]})[0]
         assert r["approved_feature_columns"] == ["a", "b"], key
         assert r["features_status"] == "approved", key
 
@@ -307,6 +307,6 @@ def test_sensitive_feature_is_listed_but_not_recommended():
 
 def test_sensitive_feature_can_be_used_when_the_user_approves_it():
     r = detect_dataset(_with_sensitive(), overrides={"d.xlsx": "a"},
-                       approved_features=["gender", "b"])
+                       approved_feature_columns=["gender", "b"])
     assert r["approved_feature_columns"] == ["gender", "b"]
     assert r["features_status"] == "approved"

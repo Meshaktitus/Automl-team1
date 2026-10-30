@@ -265,11 +265,11 @@ def test_recommended_approved_and_status():
     assert "churn" not in result["recommended_feature_columns"]
     assert "customer_id" not in result["recommended_feature_columns"]
     approved = run_detection(
-        [churn_profile()], approved_features=["tenure_months"])[0]
+        [churn_profile()], approved_feature_columns=["tenure_months"])[0]
     assert approved["features_status"] == "approved"
     assert approved["approved_feature_columns"] == ["tenure_months"]
     bad = run_detection([churn_profile()],
-                        approved_features=["customer_id"])[0]
+                        approved_feature_columns=["customer_id"])[0]
     assert bad["approved_feature_columns"] == []
     assert "not usable features" in " ".join(bad["warnings"])
 

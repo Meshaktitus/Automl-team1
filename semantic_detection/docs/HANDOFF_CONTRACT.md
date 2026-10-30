@@ -1,7 +1,7 @@
 # Handoff contract: target, problem type and input columns (1.0-draft, revision 3)
 
 Owner: Samarth. Consumers: Sumanth (AutoML, primary), Sinchana (preprocessing). Reviewer: Meshak.
-Status: **implemented and tested as a prototype; proposed, pending Team 1 review.** Revision 3 follows Sumanth's review of revision 2. Fields marked *optional* may be left out or filled later. **The interface is not frozen** until Sinchana and the reviewer have agreed it.
+Status: **implemented and tested as a prototype; proposed, pending Team 1 review.** Review points from Meshak (29 Oct) and how each was handled: section 13. **Document status: Proposed — Pending Review.** Revision 3 follows Sumanth's review of revision 2. Fields marked *optional* may be left out or filled later. **The interface is not frozen** until Sinchana and the reviewer have agreed it.
 
 ## Changes since revision 2 (after Sumanth's review)
 1. Added `target_statistics` (data type, unique count, missing information, class distribution or numerical statistics).
@@ -22,7 +22,7 @@ result = detect_dataset(            # one dataset per call
     goal=None,                      # optional business goal in plain words
     overrides=None,                 # optional {dataset_name: target_column} chosen by the user
     problem_type_override=None,     # optional problem type chosen by the user
-    approved_features=None,         # optional columns the user approved for training
+    approved_feature_columns=None,         # optional columns the user approved for training
     quality_settings=None,          # optional, change the proposed quality penalties
 )
 # run_detection([...]) takes several profiles and returns a list of the same results
@@ -59,7 +59,7 @@ Command line: `python run_detection.py --profiles <folder> [--quality file.json]
 | `dataset_characteristics` | object | Dataset facts (section 6) |
 | `leakage_checks` | object | `status` (`checked`, `not_checked` or `pending_integration`), `reason`, `thresholds`, `suspects[]` (`column`, `correlation`, `level` possible/strong, `message`) and `limits`. See section 5 |
 | `semantic_columns` | list | `column, semantic_type, confidence, sensitive` for every column |
-| `status` | text | Always `Proposed, pending verification` (the only value in this version) |
+| `status` | text | Always `Proposed, pending verification` (the only value in this version). It is a fixed label saying this result is a **recommendation not yet verified by a person**. It is **not** contract approval and **not** runtime execution status (see section 13, point 5) |
 
 **Optional / task-dependent:** `target_statistics` (null when there is no target), and inside `dataset_characteristics`: `feature_type_counts`, `missing_summary`, `time_info`, `validation_warnings`; and `preprocessing_hint` in each role.
 
@@ -138,12 +138,13 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 6. Do not use a candidate with priority `Blocked by quality`, or a column with `quality_blocked` true, without the user's say-so.
 7. Show `warnings`, `validation_warnings` and `leakage_checks.status`. Do not treat leakage as checked unless the status is `checked`, and remember its limits.
 
-## 8. Examples (real outputs of the prototype, shortened)
+## 8. Examples (real outputs of the prototype, regenerated 29 Oct from the current code; `candidates` cut to 2 and `column_roles` cut to 3 entries to keep them short. Full files are in `samples/`)
 
-**A. The user picked the target** (customer churn; `target_confirmed` true).
+**A. The user picked the target** (customer churn; `target_confirmed` true, `needs_confirmation` still true). Why both: `target_confirmed` says the user chose the **target**. `needs_confirmation` stays true until the **problem type** is also confirmed (the user gives a problem type, or a business goal that fits the data). Here only the target was given, so the result is still not ready for training. See section 13, point 4.
 ```json
 {
   "dataset": "churn.xlsx",
+  "dataset_id": "d",
   "target": "churn",
   "target_source": "user_override",
   "problem_type": "binary_classification",
@@ -196,6 +197,32 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "blocking_reason": null
     }
   ],
+  "semantic_columns": [
+    {
+      "column": "customer_id",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "monthly_charges",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.6,
+      "sensitive": false
+    },
+    {
+      "column": "tenure_months",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "churn",
+      "semantic_type": "boolean_flag",
+      "confidence": 0.9,
+      "sensitive": false
+    }
+  ],
   "dataset_characteristics": {
     "row_count": 100,
     "column_count": 4,
@@ -245,7 +272,13 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "identifier",
       "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
-      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "preprocessing_actions": [
+        "do_not_use_as_input",
+        "keep_for_join"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "monthly_charges",
@@ -262,7 +295,12 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "feature",
       "reason": "numerical_measure column usable as a model input.",
-      "preprocessing_hint": "Scale if the model needs it."
+      "preprocessing_hint": "Scale if the model needs it.",
+      "preprocessing_actions": [
+        "scale_numeric"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "tenure_months",
@@ -279,12 +317,23 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "feature",
       "reason": "numerical_measure column usable as a model input.",
-      "preprocessing_hint": "Scale if the model needs it."
+      "preprocessing_hint": "Scale if the model needs it.",
+      "preprocessing_actions": [
+        "scale_numeric"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     }
   ],
   "leakage_checks": {
+    "thresholds": {
+      "possible": 0.8,
+      "strong": 0.95
+    },
+    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+    "suspects": [],
     "status": "pending_integration",
-    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
+    "reason": "The profile has no correlations, so the check was not run."
   },
   "status": "Proposed, pending verification"
 }
@@ -294,6 +343,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 ```json
 {
   "dataset": "sales.xlsx",
+  "dataset_id": "d",
   "target": "revenue",
   "target_source": "top_suggestion",
   "problem_type": "forecasting",
@@ -348,6 +398,26 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "warnings": "",
       "quality_issue_codes": [],
       "blocking_reason": null
+    }
+  ],
+  "semantic_columns": [
+    {
+      "column": "order_date",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "units_sold",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "revenue",
+      "semantic_type": "financial_amount",
+      "confidence": 0.9,
+      "sensitive": false
     }
   ],
   "dataset_characteristics": {
@@ -411,7 +481,12 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "date",
       "reason": "Date column that can act as a time axis.",
-      "preprocessing_hint": "Use as the time index for forecasting; derive lag features."
+      "preprocessing_hint": "Use as the time index for forecasting; derive lag features.",
+      "preprocessing_actions": [
+        "time_index"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "units_sold",
@@ -428,7 +503,12 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "feature",
       "reason": "numerical_measure column usable as a model input.",
-      "preprocessing_hint": "Scale if the model needs it."
+      "preprocessing_hint": "Scale if the model needs it.",
+      "preprocessing_actions": [
+        "scale_numeric"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "revenue",
@@ -445,12 +525,23 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "target",
       "reason": "Suggested or chosen target column.",
-      "preprocessing_hint": "Target: use as the value to predict; check for outliers."
+      "preprocessing_hint": "Target: use as the value to predict; check for outliers.",
+      "preprocessing_actions": [
+        "use_as_target"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     }
   ],
   "leakage_checks": {
+    "thresholds": {
+      "possible": 0.8,
+      "strong": 0.95
+    },
+    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+    "suspects": [],
     "status": "pending_integration",
-    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
+    "reason": "The profile has no correlations, so the check was not run."
   },
   "status": "Proposed, pending verification"
 }
@@ -460,6 +551,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 ```json
 {
   "dataset": "churn.xlsx",
+  "dataset_id": "d",
   "target": "churn",
   "target_source": "top_suggestion",
   "problem_type": "binary_classification",
@@ -512,21 +604,32 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issues": "",
       "quality_issue_codes": [],
       "blocking_reason": null
+    }
+  ],
+  "semantic_columns": [
+    {
+      "column": "customer_id",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": false
     },
     {
-      "rank": 3,
-      "candidate_target": "monthly_charges",
+      "column": "monthly_charges",
       "semantic_type": "numerical_measure",
-      "suggested_problem_type": "regression",
-      "score": 0.0,
-      "confidence_level": "Low",
-      "priority": "Blocked by quality",
-      "warnings": "INVALID_RANGE (blocking): negative charge [2 rows]",
-      "quality_issues": "INVALID_RANGE (blocking): negative charge [2 rows]",
-      "quality_issue_codes": [
-        "INVALID_RANGE"
-      ],
-      "blocking_reason": "INVALID_RANGE: negative charge"
+      "confidence": 0.6,
+      "sensitive": false
+    },
+    {
+      "column": "tenure_months",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "churn",
+      "semantic_type": "boolean_flag",
+      "confidence": 0.9,
+      "sensitive": false
     }
   ],
   "dataset_characteristics": {
@@ -579,7 +682,13 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "identifier",
       "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
-      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "preprocessing_actions": [
+        "do_not_use_as_input",
+        "keep_for_join"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "monthly_charges",
@@ -600,12 +709,45 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       ],
       "role": "feature",
       "reason": "numerical_measure column usable as a model input. Blocking quality issue reported; review before use.",
-      "preprocessing_hint": "Scale if the model needs it."
+      "preprocessing_hint": "Scale if the model needs it.",
+      "preprocessing_actions": [
+        "scale_numeric"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
+    },
+    {
+      "column": "tenure_months",
+      "semantic_type": "numerical_measure",
+      "data_type": "int64",
+      "unique_values": 60,
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "sensitive": false,
+      "needs_privacy_review": false,
+      "time_axis": false,
+      "quality_blocked": false,
+      "quality_issues": [],
+      "quality_issue_codes": [],
+      "role": "feature",
+      "reason": "numerical_measure column usable as a model input.",
+      "preprocessing_hint": "Scale if the model needs it.",
+      "preprocessing_actions": [
+        "scale_numeric"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     }
   ],
   "leakage_checks": {
+    "thresholds": {
+      "possible": 0.8,
+      "strong": 0.95
+    },
+    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+    "suspects": [],
     "status": "pending_integration",
-    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
+    "reason": "The profile has no correlations, so the check was not run."
   },
   "status": "Proposed, pending verification"
 }
@@ -615,6 +757,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 ```json
 {
   "dataset": "HumanResources.Employee.xlsx",
+  "dataset_id": "HumanResources.Employee",
   "target": null,
   "target_source": "none",
   "problem_type": "review_required",
@@ -631,7 +774,8 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
     }
   ],
   "warnings": [
-    "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
+    "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+    "Sensitive columns are not recommended until a privacy review: MaritalStatus, Gender. They stay in feature_columns; the user must approve them explicitly to use them"
   ],
   "target_confirmed": false,
   "target_statistics": null,
@@ -659,6 +803,104 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "warnings": "No column clearly looks like an outcome; confirm the business objective",
       "quality_issue_codes": [],
       "blocking_reason": null
+    }
+  ],
+  "semantic_columns": [
+    {
+      "column": "BusinessEntityID",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "NationalIDNumber",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": true
+    },
+    {
+      "column": "LoginID",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": true
+    },
+    {
+      "column": "OrganizationNode",
+      "semantic_type": "text",
+      "confidence": 0.5,
+      "sensitive": false
+    },
+    {
+      "column": "OrganizationLevel",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": false
+    },
+    {
+      "column": "JobTitle",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": false
+    },
+    {
+      "column": "BirthDate",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": true
+    },
+    {
+      "column": "MaritalStatus",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": true
+    },
+    {
+      "column": "Gender",
+      "semantic_type": "categorical",
+      "confidence": 0.95,
+      "sensitive": true
+    },
+    {
+      "column": "HireDate",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "SalariedFlag",
+      "semantic_type": "boolean_flag",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "VacationHours",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "SickLeaveHours",
+      "semantic_type": "numerical_measure",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "CurrentFlag",
+      "semantic_type": "boolean_flag",
+      "confidence": 0.9,
+      "sensitive": false
+    },
+    {
+      "column": "rowguid",
+      "semantic_type": "identifier",
+      "confidence": 0.99,
+      "sensitive": false
+    },
+    {
+      "column": "ModifiedDate",
+      "semantic_type": "date",
+      "confidence": 0.99,
+      "sensitive": false
     }
   ],
   "dataset_characteristics": {
@@ -724,8 +966,6 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
   "recommended_feature_columns": [
     "OrganizationLevel",
     "JobTitle",
-    "MaritalStatus",
-    "Gender",
     "SalariedFlag",
     "VacationHours",
     "SickLeaveHours"
@@ -748,7 +988,13 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "identifier",
       "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
-      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "preprocessing_actions": [
+        "do_not_use_as_input",
+        "keep_for_join"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "NationalIDNumber",
@@ -765,7 +1011,14 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "identifier",
       "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
-      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "do_not_use_as_input",
+        "keep_for_join"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     },
     {
       "column": "LoginID",
@@ -782,12 +1035,25 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
       "quality_issue_codes": [],
       "role": "identifier",
       "reason": "Identifier or contact value; useful for joining tables, not as a model input.",
-      "preprocessing_hint": "Do not use as a model input; keep for joining tables."
+      "preprocessing_hint": "Do not use as a model input; keep for joining tables.",
+      "preprocessing_actions": [
+        "privacy_review_before_use",
+        "do_not_use_as_input",
+        "keep_for_join"
+      ],
+      "leakage_suspect": null,
+      "leakage_correlation": null
     }
   ],
   "leakage_checks": {
-    "status": "pending_integration",
-    "reason": "Target-leakage checks need column correlations from the profiling module (planned, not yet available). Not run."
+    "thresholds": {
+      "possible": 0.8,
+      "strong": 0.95
+    },
+    "limits": "Numerical column pairs only, straight-line (Pearson) relationships only. Categorical targets, derived columns and time-based leakage are not detected.",
+    "suspects": [],
+    "status": "not_checked",
+    "reason": "No target chosen yet, so there is nothing to compare against."
   },
   "status": "Proposed, pending verification"
 }
@@ -808,7 +1074,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
 
 1. Sinchana: does preprocessing need anything more than the roles and hints above?
 2. Meshak and Sumanth: which fields are core for the first integration, and which stay optional?
-3. How and where does the user approve features (`approved_features`) in the application? Features stay pending until approved; the screen is to be agreed with Team 3 (section 11).
+3. How and where does the user approve features (`approved_feature_columns`) in the application? Features stay pending until approved; the screen is to be agreed with Team 3 (section 11).
 4. Final HR demo objective: `VacationHours` is a provisional demo target (see section 11); the final objective is to be confirmed by the project owner.
 5. Approval of the quality penalty and leakage defaults: they stay configurable proposed defaults for now (section 11).
 
@@ -861,6 +1127,8 @@ Every field in the schema is always present in the result, except `dataset_id`, 
 | `clustering`, `anomaly_detection`, `recommendation` (no target) | | `needs_confirmation` is false (the problem type is confirmed) and the features are approved |
 | `review_required` | Profiling and quality analysis only | A person chooses a target or a problem type, and the module is run again |
 
+These rules are implemented as a small reference function, `training_rules.py` (`training_blockers(result)` and `can_start_training(result)`), with 9 tests in `test_training_rules.py`. Both are Proposed with section 12.2.
+
 Sinchana's rule is adopted: if `target_confirmed` is false, AutoML may profile and analyse quality but must not start supervised training. `forecasting` also needs the date column whose role entry has `time_axis` true.
 
 ### 12.3 Problem types: exact allowed values
@@ -896,6 +1164,19 @@ These are recommendations. The module does not transform the data.
 ### 12.5 Privacy
 
 - A column is sensitive when `sensitive` and `needs_privacy_review` are true (for example gender or marital status, and also identifiers such as national ID, and birth date).
-- **Proposed default (29 Oct):** a sensitive feature stays in `feature_columns`, but is **not** in `recommended_feature_columns`, and the result carries a warning. It is used for training only when the user approves it explicitly (`approved_features`). Before this change, sensitive features were recommended with a flag only. Decision to confirm: Meshak, Sinchana.
+- **Proposed default (29 Oct):** a sensitive feature stays in `feature_columns`, but is **not** in `recommended_feature_columns`, and the result carries a warning. It is used for training only when the user approves it explicitly (`approved_feature_columns`). Before this change, sensitive features were recommended with a flag only. Decision to confirm: Meshak, Sinchana.
 - Preprocessing and AutoML must not use a sensitive column as a model input unless it is in `approved_feature_columns`. Original column names are kept, so privacy rules can be traced across stages.
 - Identifiers are never model inputs, whether sensitive or not.
+
+## 13. Review points from Meshak (29 Oct 2026) and how each was handled
+
+Nothing here is approved. Items that depend on other people stay **Proposed** or **Pending**.
+
+| # | Point | Resolution | Status |
+|---|---|---|---|
+| 1 | Example D listed `MaritalStatus` and `Gender` in `recommended_feature_columns`, against section 12.5 | The example was old. All four examples in section 8 were regenerated from the current code. In Example D the two columns stay in `feature_columns` and are no longer recommended, and the warning says so. A test now checks every example (`test_samples_and_examples.py`) | Fixed; section 12.5 default itself still Proposed (Meshak, Sinchana) |
+| 2 | Two names for the approved features | One name everywhere: **`approved_feature_columns`**. It is the result field, the function argument of `run_detection`, and the field in the review-screen payload (`review_decisions.schema.json`, its sample, and the documents). The old input name `approved_features` was removed; it is no longer accepted by the payload schema | Done in this module. Team 2 and Team 3 must use the same name (Pending) |
+| 3 | Validate sample JSONs and check `preprocessing_actions` | `test_samples_and_examples.py` validates every full sample in `samples/` against `handoff_result.schema.json`. For every column of every sample it checks all eight mandatory preprocessing fields, that `preprocessing_actions` is not empty, that sensitive columns carry `privacy_review_before_use`, and that sensitive features are not recommended. The trimmed sample (`output_Employee_mandatory_fields_only.json`) is trimmed on purpose, so it is checked against the mandatory list in 12.1 instead of the full schema | Done, 281 tests pass |
+| 4 | Example A: `target_confirmed` true, `needs_confirmation` true | Intended. The two flags answer different questions: `target_confirmed` = the user chose the target; `needs_confirmation` = the problem type is not yet confirmed. Training needs both settled, plus approved features. Explained under Example A, and tested in `test_training_rules.py` (suggestion only; target only; target and problem type but no features; all three approvals; empty feature list; clustering without target; forecasting without a time axis; `review_required`) | Rules Proposed (12.2); tests done |
+| 5 | Does `status` mean contract approval or runtime status? | Neither. It is a fixed label on the result: "this recommendation is not yet verified by a person". Contract approval is recorded in the documents (this file and `INTEGRATION_REQUIREMENTS.md`), not in the result. Runtime outcome is visible today through `problem_type` `review_required` plus `warnings` (for example, a failed profile). **Option, not done:** add a separate field such as `run_status`; I recommend deciding it with Sumanth and Team 2 first | Clarified; `run_status` Pending |
+| 6 | Problem types confirmed by Sumanth; remaining dependencies | **Sumanth has not confirmed** which problem types AutoML supports. The eight values in 12.3 are my proposal. Remaining: Sumanth (supported types, core fields, `target_confirmed` handling); Sinchana (review of 12.1 against her request and response contracts, then confirmation); Team 2 (API contract B1 to B8, who stores and returns `approved_feature_columns`); Team 3 (screen details F3 to F6); Meshak (defaults, merge of PR #2 and PR #3) | Pending |

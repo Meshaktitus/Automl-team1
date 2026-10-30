@@ -10,9 +10,11 @@ from run_detection import run_detection
 from test_profiling_integration import col, profile
 from test_run_detection import churn_profile, sales_profile
 
+_HERE = Path(__file__).resolve().parent
+ROOT = next(d for d in (_HERE, _HERE.parent)
+            if (d / "handoff_result.schema.json").exists())
 SCHEMA = json.loads(
-    (Path(__file__).resolve().parent.parent / "handoff_result.schema.json").read_text(
-        encoding="utf-8"))
+    (ROOT / "handoff_result.schema.json").read_text(encoding="utf-8"))
 
 
 def check(result):
@@ -46,7 +48,7 @@ def test_quality_blocked_and_approved_result_follows_schema():
         {"rule_id": "INVALID_RANGE", "severity": "Blocking",
          "affected_column": "tenure_months", "affected_rows": 2}]}
     r = run_detection([churn_profile()], quality=q,
-                      approved_features={"churn.xlsx": ["tenure_months"]})[0]
+                      approved_feature_columns={"churn.xlsx": ["tenure_months"]})[0]
     check(r)
 
 

@@ -1,7 +1,7 @@
 # Pipeline stage submission: Semantic Understanding, Target Detection and Problem Classification
 
 Owner: Samarth (Team 1). Date: Wednesday 28 October 2026. Requested by Meshak: inputs, outputs, target and problem-type handoff, unresolved dependencies, implemented versus proposed, samples.
-Labels: **Implemented** (built and tested, 256 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
+Labels: **Implemented** (built and tested, 281 test cases passing), **Prototype** (works, not final), **Proposed** (decision or data still needed), **Design only**, **Blocked**.
 
 ## 1. Where this stage sits
 
@@ -20,7 +20,7 @@ This stage never reads the source data file. It reads only the JSON that Sanjay'
 | Approved feature columns | User | `{dataset: [columns]}` | No | Implemented (how the application collects this is open, see 7) |
 | Quality penalty settings, leakage thresholds | Config | Dict; defaults in code | No | Implemented; the default values are **Proposed** (not in the SRS) |
 
-Call: `run_detection(profiles, quality=None, goal=None, overrides=None, problem_type_override=None, quality_dataset=None, quality_settings=None, approved_features=None, leakage_settings=None)`; also a command line. **Prototype:** it is a function and a JSON file. There is no HTTP or storage layer; the backend contract (Meshak) decides that.
+Call: `run_detection(profiles, quality=None, goal=None, overrides=None, problem_type_override=None, quality_dataset=None, quality_settings=None, approved_feature_columns=None, leakage_settings=None)`; also a command line. **Prototype:** it is a function and a JSON file. There is no HTTP or storage layer; the backend contract (Meshak) decides that.
 
 ## 3. Outputs
 

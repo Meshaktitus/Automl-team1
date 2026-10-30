@@ -6,7 +6,7 @@ Honest labels used below: **Implemented**, **Prototype**, **Design only**, **Blo
 
 ## 1. Summary
 
-All planned work up to and including today (Thu 29 Oct) is complete on my side; what remains is confirmation from other teams (see section 5). The module is Implemented and tested (256 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
+All planned work up to and including today (Thu 29 Oct) is complete on my side; what remains is confirmation from other teams (see section 5). The module is Implemented and tested (281 test cases, all passing), the code is on GitHub (PR #1 merged, PR #2 and the leakage-check PR open for review), and the written deliverables exist in `semantic_detection/docs/`. The target-leakage code and the output schema are on their own branch (`samarth-leakage-check`) with a pull request on top of PR #2. Open items are dependencies on other people, not unfinished work: target-leakage checks (partly built: numerical targets only), real quality output for the HR tables (Vinitha), agreement of the contract fields with Sinchana, and approval of the quality penalty values.
 
 ## 2. Plan versus status (through today)
 
@@ -35,7 +35,7 @@ All planned work up to and including today (Thu 29 Oct) is complete on my side; 
 | Wed 28 Oct | Integrated detection module | Implemented | `run_detection.py` (profiling + quality + goal + overrides in one call) |
 | | Test report and unresolved-case list | Implemented | `docs/TEST_REPORT.md` |
 | | Updated interface contract | Ready for review | Contract revision 3 plus today's additions, `handoff_result.schema.json` |
-| Thu 29 Oct | Prototype integration with the draft contract (AutoML handoff: target, problem type, features as one JSON file per run) | Implemented (prototype); contract **Proposed** | `run_detection.py`, `handoff_result.schema.json`, 256 tests |
+| Thu 29 Oct | Prototype integration with the draft contract (AutoML handoff: target, problem type, features as one JSON file per run) | Implemented (prototype); contract **Proposed** | `run_detection.py`, `handoff_result.schema.json`, 281 tests |
 | | Requirements and pending clarifications for Team 2, Team 3, Sinchana and Sumanth (proposed versus finalized, blockers, owners) | Implemented (document); answers **Pending** | `docs/INTEGRATION_REQUIREMENTS.md` |
 | | Document the numerical-target leakage limit and the pending feature-approval step | Implemented | `docs/INTEGRATION_REQUIREMENTS.md` sections 6 and 7, contract section 11 |
 
@@ -49,7 +49,7 @@ All planned work up to and including today (Thu 29 Oct) is complete on my side; 
 - One entry point (`run_detection.py`) gives, per dataset: target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, recommended and approved feature columns, a role and preprocessing hint for every column, target statistics, dataset characteristics and validation warnings, and the leakage-check status.
 - Tested on HR data and on healthcare, banking, telecom, education and retail data, plus anonymous column names and an empty column. Nothing is hard-coded to HR.
 
-Size: about 2,900 lines of code, 256 test cases, 3 documents.
+Size: about 2,900 lines of code, 281 test cases, 3 documents.
 
 ## 4. Tuesday 27 Oct
 
@@ -71,7 +71,7 @@ Size: about 2,900 lines of code, 256 test cases, 3 documents.
 | Wrote the machine-readable output schema (JSON Schema) for the handoff result, with a test that checks real outputs against it. It caught one value the schema did not list (`User-selected` confidence level), fixed, and one unknown-dataset result with a different shape, fixed | `handoff_result.schema.json`, `test_handoff_schema.py` (8 tests) |
 | Cleaned the project: moved an old backup folder out, which was making the tests load an old file | Test run: 209 passed |
 
-Test count: 117 (Mon night) to 256 (today).
+Test count: 117 (Mon night) to 281 (today).
 
 ## 4b. Today's work (Wed 28 Oct), separate
 
@@ -84,7 +84,7 @@ Test count: 117 (Mon night) to 256 (today).
 | Meshak asked every owner for inputs, outputs, dependencies, error handling, implemented versus proposed, and samples. Verified each failure case on real code, fixed 3 weak spots (one bad profile no longer stops a run; duplicate dataset names; quality findings for unknown columns), and wrote the stage submission with 5 real sample files | `docs/PIPELINE_STAGE_SEMANTIC_DETECTION.md`, `samples/` |
 | Contract and spec updated with the new rules; progress report updated | `docs/HANDOFF_CONTRACT.md`, `docs/SEMANTIC_PROBLEM_SPEC.md` |
 
-Test count today: 217 to 256.
+Test count today: 217 to 281.
 
 ## 4c. Today's work (Thu 29 Oct), separate
 
@@ -98,7 +98,7 @@ Test count today: 217 to 256.
 | Wrote the integration requirements for Team 2 (Backend) and Team 3 (Frontend), Sinchana and Sumanth: inputs, outputs, schema, API dependencies, feature-approval step, decisions needed, proposed versus finalized, blockers with owners and requested times. Documented that leakage is checked for numerical targets only | `docs/INTEGRATION_REQUIREMENTS.md` |
 | Answered Sinchana's 4 clarifications (preprocessing): fixed-value `preprocessing_actions` added next to the free-text hint; sensitive features are no longer recommended until the user approves them (proposed default, found while checking her privacy question); mandatory versus optional fields, the training rule (no supervised training until the target is confirmed) and the exact problem-type values written down; trimmed sample added | `docs/HANDOFF_CONTRACT.md` section 12, `handoff_details.py`, `run_detection.py`, `samples/` |
 | Test output on the six HR tables prepared for Sanjay | `six_tables_test_output.txt` (shared directly, not in the repo) |
-| Test count today: 250 to 256, all passing | Test run |
+| Test count today: 250 to 281, all passing | Test run |
 
 ## 5. Open items and dependencies (not unfinished work)
 

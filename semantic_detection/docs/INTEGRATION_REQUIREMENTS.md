@@ -1,5 +1,7 @@
 # Integration requirements: Semantic Understanding, Target Detection and Problem Classification
 
+**Document status: Proposed — Pending Review.** Not finalized. Revised 29 Oct 2026 after Meshak's review (5 points, see section 10).
+
 Owner: Samarth (Team 1). Written Thu 29 Oct 2026 for Team 2 (Backend), Team 3 (Frontend), Sinchana (preprocessing) and Sumanth (AutoML).
 
 **Status labels used below**
@@ -11,7 +13,7 @@ Everything this module returns is marked `Proposed, pending verification` until 
 
 ## 1. What this stage does (one paragraph)
 
-It reads the profiling JSON (Sanjay) and the data-quality JSON (Vinitha) for each dataset. It proposes what each column means, which column could be the target, which problem type fits (binary classification, multiclass classification, regression, forecasting, clustering, or `review_required`), which columns are usable as features, and what to warn about. It never reads the raw data. It never decides alone: the user confirms the target and the features before training.
+It reads the profiling JSON (Sanjay) and the data-quality JSON (Vinitha) for each dataset. It proposes what each column means, which column could be the target, which problem type fits (binary classification, multiclass classification, regression, forecasting, clustering, anomaly detection, recommendation, or `review_required`; exact values in section 3b), which columns are usable as features, and what to warn about. It never reads the raw data. It never decides alone: the user confirms the target and the features before training.
 
 ## 2. Inputs
 
@@ -46,7 +48,30 @@ Most important fields for the other teams:
 | `warnings` | Show to the user |
 | `status` | Always `Proposed, pending verification` |
 
-Rules for any consumer (full list in the contract, section 7): do not start training while `needs_confirmation` is true or `target_confirmed` is false; if `target` is null or the type is `review_required`, ask the user for the business objective and the target; train only on `approved_feature_columns` when it is not null.
+Rules for any consumer (full list in the contract, sections 7 and 12.2; reference code `training_rules.py`, tests `test_training_rules.py`). Proposed:
+
+- **Never** start training while `needs_confirmation` is true (the problem type is not confirmed), or while the features are not approved.
+- **Types that need a target** (`binary_classification`, `multiclass_classification`, `regression`, `forecasting`): also require `target_confirmed` true. `forecasting` also needs a date column with `time_axis` true.
+- **Types that need no target** (`clustering`, `anomaly_detection`, `recommendation`): `target_confirmed` is not required, because there may be no target.
+- `review_required` is never trainable. Ask the user for the business objective and the target (or the problem type), then run the module again.
+- Train only on `approved_feature_columns`. Profiling and data-quality analysis are allowed at any time.
+
+## 3b. Supported problem types (one list)
+
+These eight lowercase values are the only ones the module returns (`handoff_result.schema.json`, contract section 12.3). This list is the same in this document, the contract and the schema.
+
+| Value | Needs a target to train | Trainable |
+|---|---|---|
+| `binary_classification` | yes | yes |
+| `multiclass_classification` | yes | yes |
+| `regression` | yes | yes |
+| `forecasting` | yes, plus a date column (`time_axis`) | yes |
+| `clustering` | no | yes |
+| `anomaly_detection` | no | yes |
+| `recommendation` | no | yes |
+| `review_required` | not applicable | no |
+
+**Which of these AutoML supports is Pending (Sumanth).** The list is my proposal; Sumanth has not confirmed it.
 
 ## 4. When a person must confirm
 
@@ -104,7 +129,7 @@ Training starts only when all three are done. If the user changes the target, th
 
 - The module recommends feature columns and never trains. A person approves them.
 - Until approval, `features_status` is `recommended_pending_confirmation` and `approved_feature_columns` is null.
-- After approval, the backend or frontend passes the approved list back as `approved_features` (a dictionary `{dataset_id: [columns]}`, or a plain list when there is one dataset), and the result then shows `features_status` `approved`. Columns in the list that are not usable features are dropped with a warning.
+- After approval, the backend or frontend passes the approved list back as `approved_feature_columns` (a dictionary `{dataset_id: [columns]}`, or a plain list when there is one dataset). The name is the same as the result field `approved_feature_columns`, and the result then shows `features_status` `approved`. Columns in the list that are not usable features are dropped with a warning.
 - Identifiers, excluded columns and the target are never normal model inputs. A column with a blocking quality issue is not recommended. A leakage suspect is **flagged but still listed**; the person decides.
 - **Working decision (29 Oct):** the screen is the single review screen (section 5b). **Pending (Team 2):** who sends the approved list back, and how it is stored (B5).
 
@@ -148,6 +173,21 @@ I cannot promise another team's time. The times in the last column are the times
 | 5 | Approval of the proposed defaults (thresholds, confidence values) | Meshak | By Fri 30 Oct (sprint closure) |
 | 6 | Final business objective and target for the HR demo | Project owner, through Meshak | By Fri 30 Oct |
 | 7 | Reviews and merge of PR #2 and PR #3 into `main` | Meshak, Sumanth, Sinchana | Today, 29 Oct |
-| 8 | Quality results: two assumptions to confirm (pay band 6.50 to 125.00 per hour for `Rate`; age range at hire) | Vinitha | Today, 29 Oct |
+| 8 | Quality results: two assumptions (pay band 6.50 to 125.00 per hour for `Rate`; age at hire 18 to 65). Vinitha answered on 29 Oct that the band is a project baseline wage assumption. **They stay Pending** until the project owner approves them | Vinitha, project owner | Today, 29 Oct |
 
-My own items (prototype integration, 256 tests, schema, documents) are done and pushed. I continue prototype integration wherever the interfaces are compatible, and I update this document when anything is decided.
+My own items (prototype integration, 281 tests, schema, documents) are done and pushed. I continue prototype integration wherever the interfaces are compatible, and I update this document when anything is decided.
+
+## 10. Meshak's review (29 Oct) and how each point was handled
+
+Document stays **Proposed — Pending Review**. Resolutions are Proposed until reviewed.
+
+| # | Point | Resolution | Status |
+|---|---|---|---|
+| 1 | Training eligibility for problem types without a target | Section 3 now follows contract 12.2: `target_confirmed` is required only for types that need a target. Clustering, anomaly detection and recommendation need only a confirmed problem type and approved features. Code: `training_rules.py`; tests: `test_training_rules.py` (includes clustering) | Proposed; pending Sumanth and Meshak |
+| 2 | Two different lists of problem types | One list of eight values in section 3b, same as contract 12.3 and the schema. The first paragraph of this document is corrected. Whether AutoML supports each type is **not confirmed by Sumanth** | Pending (Sumanth) |
+| 3 | Sensitive features, field names, consistency | Sensitive features are not in `recommended_feature_columns` until the user approves them explicitly (`approved_feature_columns`). One name for approved features everywhere: `approved_feature_columns` (result field, function argument, review-screen payload, schema, documents). The four examples in the contract were regenerated and are tested | Proposed default; pending Meshak and Sinchana |
+| 4 | Schema and sample validation, tests | Every full sample output is validated against `handoff_result.schema.json` by `test_samples_and_examples.py`, with the mandatory preprocessing fields and `preprocessing_actions` checked on every column. Eligibility rules are tested in `test_training_rules.py`. 281 tests pass (`docs/TEST_EXECUTION_EVIDENCE.txt`) | Done |
+| 5 | Pending dependencies | Kept as Pending, nothing marked confirmed: Team 2 API contract (B1 to B8); Team 3 UI mapping (section 5b, F3 to F6); Sinchana's review of contract 12.1; Sumanth's required fields and problem types (C2 to C4); Vinitha's two assumptions (blocker 8) | Pending |
+
+PR status: PR #1 merged. PR #2 (`samarth-contract-rev2`) and PR #3 (`samarth-leakage-check`) are open, waiting for review. Do not merge PR #2 until Sinchana has reviewed 12.1.
+

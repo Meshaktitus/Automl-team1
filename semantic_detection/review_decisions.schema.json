@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:gts:team1:semantic_detection:review_decisions:proposed",
   "title": "Review decisions (payload from the review screen to the semantic detection module)",
-  "description": "Status: PROPOSED, not approved. What the user decided on the single review screen. The module takes the same values as function arguments: target -> overrides, problem_type -> problem_type_override, approved_features -> approved_features, goal -> goal. Pending: Team 2 (how the backend passes it) and Team 3 (screen).",
+  "description": "Status: PROPOSED, not approved. What the user decided on the single review screen. The module takes the same values as function arguments: target -> overrides, problem_type -> problem_type_override, approved_feature_columns -> approved_feature_columns, goal -> goal. Pending: Team 2 (how the backend passes it) and Team 3 (screen).",
   "type": "object",
   "additionalProperties": false,
   "required": ["dataset_id"],
@@ -15,7 +15,7 @@
       "enum": ["binary_classification", "multiclass_classification", "regression", "forecasting", "clustering", "anomaly_detection", "recommendation", "review_required", null],
       "description": "Problem type confirmed by the user. Null = not confirmed yet (needs_confirmation stays true)"
     },
-    "approved_features": {
+    "approved_feature_columns": {
       "type": ["array", "null"],
       "items": {"type": "string"},
       "description": "Feature columns the user approved. Null = not approved yet (features_status stays recommended_pending_confirmation). Sensitive columns are used only if listed here"
