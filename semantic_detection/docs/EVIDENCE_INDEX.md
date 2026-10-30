@@ -33,13 +33,13 @@ Repo: github.com/Meshaktitus/Automl-team1, folder `semantic_detection/`. Latest 
 | Backend contract B1 to B8 (call method, `dataset_id`, re-profiling with target, storage of decisions, errors, version field, where settings live) | Team 2 | Pending. API stays on hold |
 | Review screen details F3 to F6 | Team 3 | Pending |
 | Section 12.1 review against preprocessing request/response contracts | Sinchana | In review; she will send gaps before confirming |
-| Core fields, supported problem types, handling of `target_confirmed` false | Sumanth | Pending |
+| Exact mandatory fields (12.1) | Sumanth | Pending. He will check them. Problem types and training rule answered 30 Oct |
 | Review of PR #2 and PR #3, merge to `main` | Meshak, Sumanth, Sinchana | Pending |
 | Final HR business objective and target | Project owner via Meshak | Pending; HR tables have no outcome column |
 | Quality JSON for the 7 synthetic datasets | Vinitha | She will run it; not received yet |
 | Leakage covers numerical targets only; no time-series gap check; goal words used for forecasting and clustering | Samarth | Known limits, documented |
-| Training rules (12.2) have a reference function `training_rules.py` and 9 tests; the rules themselves are Proposed | Samarth | Done; rules pending Sumanth and Meshak |
-| Supported problem types not confirmed by Sumanth | Sumanth | Pending |
+| Training rules (12.2) have a reference function `training_rules.py` and 9 tests. Sumanth accepted the rule on 30 Oct; still Proposed until Meshak approves | Samarth | Done; approval pending Meshak |
+| AutoML supports only 3 types today (binary, multiclass, regression); forecasting and clustering planned; anomaly detection and recommendation not confirmed | Sumanth | Answered 30 Oct. Handling of unsupported recommended types: Pending (Meshak, Sumanth, frontend) |
 | `VacationHours` correlates 0.9783 with `SickLeaveHours` | Samarth | Flagged by the leakage check |
 
 ## 12. Decisions and defaults

@@ -71,7 +71,16 @@ These eight lowercase values are the only ones the module returns (`handoff_resu
 | `recommendation` | no | yes |
 | `review_required` | not applicable | no |
 
-**Which of these AutoML supports is Pending (Sumanth).** The list is my proposal; Sumanth has not confirmed it.
+**AutoML support (Sumanth, 30 Oct):**
+
+| Value | AutoML status |
+|---|---|
+| `binary_classification`, `multiclass_classification`, `regression` | Covered by the AutoML design. The working prototype mainly demonstrates regression |
+| `forecasting`, `clustering` | Planned extensions, not yet supported |
+| `anomaly_detection`, `recommendation` | Not confirmed as implemented. Recommendation also needs interaction / user-item data, which this module cannot see |
+| `review_required` | Never trained |
+
+This module can still **recommend** a type that AutoML does not support yet. Proposed handling (pending Meshak, Sumanth and the frontend team): show the recommendation, but do not offer training for a type AutoML does not support. The module itself does not change.
 
 ## 4. When a person must confirm
 
@@ -108,9 +117,9 @@ See `docs/HANDOFF_CONTRACT.md`, section 11 (table "When a human must confirm bef
 | # | Question or decision | Owner | Status |
 |---|---|---|---|
 | C1 | Does preprocessing need anything beyond `column_roles` (role, reason, preprocessing hint), semantic types and privacy flags? | Sinchana | **Answered (29 Oct):** the fields are a good starting point. She asked 4 clarifications; all four are answered in contract section 12 (proposed). She then asked for `scale_numeric`, `extract_date_features` and `group_rare_categories`: added (29 Oct); she is reviewing section 12.1 before confirming |
-| C2 | Which output fields are core for the first integration, and which stay optional? | Sumanth, Meshak | **Proposed** in contract section 12.1 (mandatory, mandatory for preprocessing, optional); sample `samples/output_Employee_mandatory_fields_only.json`; pending Sumanth |
-| C3 | What does AutoML take as input: the target, the problem type, `approved_feature_columns`? How should it treat `target_confirmed` false? | Sumanth | **Proposed** in contract section 12.2 (Sinchana's rule: profiling and quality analysis allowed, supervised training not until the target is confirmed); pending Sumanth |
-| C4 | Are the problem type names acceptable to AutoML? Exact values: `binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required` | Sumanth | **Proposed** in contract section 12.3; pending Sumanth (which ones AutoML supports) |
+| C2 | Which output fields are core for the first integration, and which stay optional? | Sumanth, Meshak | **Partly answered (Sumanth, 30 Oct):** AutoML needs the dataset reference, confirmed problem type, target (where applicable), approved feature columns and dataset validation information. He will check the exact mandatory fields in contract 12.1 before confirming. **Pending** |
+| C3 | What does AutoML take as input: the target, the problem type, `approved_feature_columns`? How should it treat `target_confirmed` false? | Sumanth | **Answered (Sumanth, 30 Oct): the training rule in contract 12.2 is acceptable to AutoML.** Training only after the validation and approval checks. Supervised: confirmed target, problem type and approved features. Clustering and anomaly detection: no target. Recommendation: no conventional target, but needs interaction / user-item data. `review_required` is never trained. Still Proposed until Meshak approves |
+| C4 | Are the problem type names acceptable to AutoML? Exact values: `binary_classification`, `multiclass_classification`, `regression`, `forecasting`, `clustering`, `anomaly_detection`, `recommendation`, `review_required` | Sumanth | **Answered (Sumanth, 30 Oct):** AutoML design covers `binary_classification`, `multiclass_classification` and `regression`. `forecasting` and `clustering` are planned extensions. `anomaly_detection` and `recommendation` are not confirmed as implemented. The working prototype mainly demonstrates regression. The names themselves were not objected to. **Pending:** exact mandatory fields (C2) |
 | C5 | Sensitive columns: proposed default is **not recommended until the user approves them** (they stay in `feature_columns`). Confirm this default | Meshak, Sinchana | **Proposed** (contract section 12.5) |
 
 ## 5b. Review screen: working decision and proposed field mapping
@@ -169,7 +178,7 @@ I cannot promise another team's time. The times in the last column are the times
 | 1 | Backend contract: B1 to B8 above | Team 2 | Today, 29 Oct, end of day (at least B1, B3, B4) |
 | 2 | Review screen details: F3 to F6 (F1 and F2 are a working decision, section 5b) | Team 3 | Today, 29 Oct, end of day |
 | 3 | Preprocessing fields: C1 | Sinchana | Today, 29 Oct |
-| 4 | AutoML input and field priority: C2 to C4 | Sumanth | Today, 29 Oct |
+| 4 | AutoML input and field priority: C2 to C4. C3 and C4 answered 30 Oct. Waiting for his check of contract 12.1 (C2) | Sumanth | Today, 30 Oct |
 | 5 | Approval of the proposed defaults (thresholds, confidence values) | Meshak | By Fri 30 Oct (sprint closure) |
 | 6 | Final business objective and target for the HR demo | Project owner, through Meshak | By Fri 30 Oct |
 | 7 | Reviews and merge of PR #2 and PR #3 into `main` | Meshak, Sumanth, Sinchana | Today, 29 Oct |
@@ -184,7 +193,7 @@ Document stays **Proposed — Pending Review**. Resolutions are Proposed until r
 | # | Point | Resolution | Status |
 |---|---|---|---|
 | 1 | Training eligibility for problem types without a target | Section 3 now follows contract 12.2: `target_confirmed` is required only for types that need a target. Clustering, anomaly detection and recommendation need only a confirmed problem type and approved features. Code: `training_rules.py`; tests: `test_training_rules.py` (includes clustering) | Proposed; pending Sumanth and Meshak |
-| 2 | Two different lists of problem types | One list of eight values in section 3b, same as contract 12.3 and the schema. The first paragraph of this document is corrected. Whether AutoML supports each type is **not confirmed by Sumanth** | Pending (Sumanth) |
+| 2 | Two different lists of problem types | One list of eight values in section 3b, same as contract 12.3 and the schema. The first paragraph is corrected. Sumanth answered on 30 Oct which types AutoML covers (section 3b): three supported by design, two planned, two not confirmed | Answered; exact mandatory fields still Pending (Sumanth) |
 | 3 | Sensitive features, field names, consistency | Sensitive features are not in `recommended_feature_columns` until the user approves them explicitly (`approved_feature_columns`). One name for approved features everywhere: `approved_feature_columns` (result field, function argument, review-screen payload, schema, documents). The four examples in the contract were regenerated and are tested | Proposed default; pending Meshak and Sinchana |
 | 4 | Schema and sample validation, tests | Every full sample output is validated against `handoff_result.schema.json` by `test_samples_and_examples.py`, with the mandatory preprocessing fields and `preprocessing_actions` checked on every column. Eligibility rules are tested in `test_training_rules.py`. 281 tests pass (`docs/TEST_EXECUTION_EVIDENCE.txt`) | Done |
 | 5 | Pending dependencies | Kept as Pending, nothing marked confirmed: Team 2 API contract (B1 to B8); Team 3 UI mapping (section 5b, F3 to F6); Sinchana's review of contract 12.1; Sumanth's required fields and problem types (C2 to C4); Vinitha's two assumptions (blocker 8) | Pending |
