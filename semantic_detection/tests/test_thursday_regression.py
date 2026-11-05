@@ -157,6 +157,22 @@ def test_ambiguous_columns_need_human_confirmation():
     assert any("confirm" in w for w in result["warnings"])
 
 
+def test_ambiguous_result_lists_columns_the_user_can_pick():
+    result = detect("ambiguous_targets.csv")
+    pick = [w for w in result["warnings"]
+            if w.startswith("Columns the user can pick from")]
+    assert len(pick) == 1
+    shown = result["candidates"][:3]
+    for candidate in shown:
+        assert candidate["candidate_target"] in pick[0]
+
+
+def test_confirmed_target_has_no_pick_list():
+    result = detect("churn_classification.csv")
+    assert not any(w.startswith("Columns the user can pick from")
+                   for w in result["warnings"])
+
+
 def test_leakage_suspect_is_flagged_but_kept():
     result = detect("house_price_regression.csv")
     assert any("area_sqft" in w and "leakage" in w

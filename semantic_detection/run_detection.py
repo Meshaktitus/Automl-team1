@@ -320,6 +320,14 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             warnings.append(
                 "No column clearly looks like an outcome; the project owner "
                 "or user must confirm the business objective and target")
+            shortlist = [
+                f"{c} ({t})" for c, t in zip(
+                    group["candidate_target"], group["suggested_problem_type"])
+                if c != "(no target)"][:3]
+            if shortlist:
+                warnings.append(
+                    "Columns the user can pick from as the target: "
+                    + ", ".join(shortlist))
         if quality_problem:
             warnings.append(
                 "The quality report could not be used (" + quality_problem

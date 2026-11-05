@@ -13,7 +13,8 @@
     ],
     "alternatives": [],
     "warnings": [
-      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
+      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+      "Columns the user can pick from as the target: GroupName (multiclass_classification), Name (multiclass_classification)"
     ],
     "target_confirmed": false,
     "target_statistics": null,
@@ -232,6 +233,7 @@
     ],
     "warnings": [
       "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+      "Columns the user can pick from as the target: SalariedFlag (binary_classification), VacationHours (regression), SickLeaveHours (regression)",
       "Sensitive columns are not recommended until a privacy review: MaritalStatus, Gender. They stay in feature_columns; the user must approve them explicitly to use them"
     ],
     "target_confirmed": false,
@@ -1124,7 +1126,8 @@
     ],
     "alternatives": [],
     "warnings": [
-      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
+      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+      "Columns the user can pick from as the target: Rate (regression), PayFrequency (binary_classification)"
     ],
     "target_confirmed": false,
     "target_statistics": null,
@@ -1576,7 +1579,8 @@
     ],
     "alternatives": [],
     "warnings": [
-      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
+      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+      "Columns the user can pick from as the target: Name (multiclass_classification)"
     ],
     "target_confirmed": false,
     "target_statistics": null,

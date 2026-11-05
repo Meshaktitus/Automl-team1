@@ -13,7 +13,8 @@
     ],
     "alternatives": [],
     "warnings": [
-      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target"
+      "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+      "Columns the user can pick from as the target: Name (multiclass_classification)"
     ],
     "target_confirmed": false,
     "target_statistics": null,

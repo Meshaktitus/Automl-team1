@@ -775,6 +775,7 @@ Fields: `column, semantic_type, data_type, role, reason, unique_values, missing_
   ],
   "warnings": [
     "No column clearly looks like an outcome; the project owner or user must confirm the business objective and target",
+    "Columns the user can pick from as the target: SalariedFlag (binary_classification), VacationHours (regression), SickLeaveHours (regression)",
     "Sensitive columns are not recommended until a privacy review: MaritalStatus, Gender. They stay in feature_columns; the user must approve them explicitly to use them"
   ],
   "target_confirmed": false,

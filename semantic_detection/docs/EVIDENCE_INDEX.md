@@ -60,3 +60,14 @@ Repo: github.com/Meshaktitus/Automl-team1, folder `semantic_detection/`. Latest 
 | Sensitive features not recommended until the user approves them | **Approved by Meshak (30 Oct)**; preprocessing agreement not recorded yet |
 | `preprocessing_actions` fixed values (incl. `scale_numeric`, `extract_date_features`, `group_rare_categories`) | Proposed; pending Sinchana |
 | Mandatory vs optional output fields; exact problem-type values | Proposed; pending Sumanth and Sinchana |
+
+## Update, Thu 5 Nov 2026
+
+Test count is now **346 passing** (the 281 above is the 30 Oct figure; the full run saved in `TEST_EXECUTION_EVIDENCE.txt` is from that date). New since then:
+
+| What | File |
+|---|---|
+| Thursday validation results (fixtures, leakage, retest of D7, ambiguous cases) | `docs/SEMANTIC_VALIDATION_RESULTS.md` |
+| Behaviour-to-test coverage report | `docs/MODULE_COVERAGE_REPORT.md` |
+| Defect D7 (fixed) | `docs/DEFECT_REGISTER.md` |
+| Integration and input-validation tests | `tests/test_integration_day3.py`, `tests/test_input_validation.py`, `tests/test_thursday_regression.py` |
