@@ -148,6 +148,12 @@ def _stand_in_values(column, non_null):
         if _whole_numbers(column, low, high, unique):
             points = [int(round(p)) for p in points]
             points = list(dict.fromkeys(points))
+        if int(column["unique_count"]) < non_null:
+            # Values repeat in the real column (hour of day, month, age).
+            # The stand-in lists each distinct value once, so without this
+            # the "unique consecutive whole numbers" rule would call any
+            # compact numeric range an identifier.
+            points = points + points[:1]
         return points
 
     if inferred == "text":
