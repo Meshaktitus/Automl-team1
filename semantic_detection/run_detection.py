@@ -278,11 +278,19 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
     skipped_quality = 0
     suggestions = suggest_targets(report, overrides=overrides)
     routed = None
+    quality_problem = None
     if quality is not None:
-        routed, skipped_quality = _route_quality(
-            quality, datasets, quality_dataset, aliases)
-        suggestions = apply_quality_to_suggestions(
-            suggestions, routed, settings=quality_settings)
+        try:
+            routed, skipped_quality = _route_quality(
+                quality, datasets, quality_dataset, aliases)
+        except (ValueError, OSError) as error:
+            # a missing, failed or malformed quality report must not stop
+            # the run; the results say they were not quality-adjusted
+            routed, skipped_quality = None, 0
+            quality_problem = str(error)
+        if routed is not None:
+            suggestions = apply_quality_to_suggestions(
+                suggestions, routed, settings=quality_settings)
 
     results = []
     for dataset in datasets:
@@ -312,6 +320,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
             warnings.append(
                 "No column clearly looks like an outcome; the project owner "
                 "or user must confirm the business objective and target")
+        if quality_problem:
+            warnings.append(
+                "The quality report could not be used (" + quality_problem
+                + "); results are not adjusted for data quality")
         if skipped_quality:
             warnings.append(
                 f"{skipped_quality} quality issue(s) had no dataset and were "

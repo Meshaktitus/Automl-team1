@@ -123,6 +123,11 @@ def load_quality_report(source):
                 for i in entry["issues"] if isinstance(i, dict))
         return {"detected_issues": merged}
     issues = None
+    if isinstance(data, dict) and data.get("status") == "failed":
+        codes = "; ".join(
+            str(e.get("code")) for e in data.get("errors") or []
+            if isinstance(e, dict)) or "no error code"
+        raise ValueError(f"Quality report has status 'failed': {codes}")
     if isinstance(data, dict):
         for key in ("detected_issues", "issues"):
             if isinstance(data.get(key), list):
