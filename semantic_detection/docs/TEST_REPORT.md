@@ -1,11 +1,11 @@
 # Test report and unresolved-case list: Semantic Understanding, Target Detection and Problem Classification
 
-Owner: Samarth (Team 1). Report date: Wednesday 28 October 2026 (plan item: Integrated detection).
+Owner: Samarth (Team 1). Report date: Wednesday 28 October 2026 (plan item: Integrated detection); updated Friday 6 November 2026 (final suite, 346 tests).
 Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **Ready for review**.
 
 ## 1. Result in one paragraph
 
-281 automatic test cases, all passing. The integrated entry point (`run_detection.py`) reads Sanjay's profiling output and Vinitha's quality report and gives, per dataset, the target, the problem type, the evidence and the feature columns. Today I tested missing, ambiguous and poorly populated targets and columns (19 new cases plus 2 for the profiling class distribution). The tests found 4 real gaps and 1 crash, and a review of failure handling found 3 more weak spots (one bad profile stopped the whole run; duplicate dataset names were merged silently; quality findings for unknown columns were ignored silently); all are fixed. Nine cases remain open; they are listed in section 4 with the person each one depends on.
+346 automatic test cases, all passing (281 on 30 Oct; 65 added in Week 3: integration, input validation, Thursday regression). The integrated entry point (`run_detection.py`) reads Sanjay's profiling output and Vinitha's quality report and gives, per dataset, the target, the problem type, the evidence and the feature columns. Today I tested missing, ambiguous and poorly populated targets and columns (19 new cases plus 2 for the profiling class distribution). The tests found 4 real gaps and 1 crash, and a review of failure handling found 3 more weak spots (one bad profile stopped the whole run; duplicate dataset names were merged silently; quality findings for unknown columns were ignored silently); all are fixed. Nine cases remain open; they are listed in section 4 with the person each one depends on.
 
 ## 2. What was tested
 
@@ -24,7 +24,10 @@ Status labels: **Implemented**, **Prototype**, **Design only**, **Blocked**, **R
 | `test_training_rules.py` | 9 | Training-eligibility rules (contract 12.2, proposed): suggestion only, target without problem type (Example A), all three approvals, empty feature list, clustering, forecasting time axis |
 | `test_samples_and_examples.py` | 16 | Every sample output follows the schema and has the mandatory preprocessing fields (incl. `preprocessing_actions`); sensitive features never recommended; review-decisions schema and sample; the four examples in the contract |
 | `test_robustness.py` | 32 | Missing, constant, mixed-type and unpredictable targets; empty, tiny and zero-row data; profiles without columns; failed or unreadable profiles in a multi-dataset run; duplicate dataset names; quality findings for unknown columns; class distribution from profiling |
-| **Total** | **281** | |
+| `test_integration_day3.py` | 5 | Real HR profile plus quality report, missing target flagged, user target respected |
+| `test_input_validation.py` | 26 | Missing, incomplete or failed profiling and quality input; CSV and Excel profiles give the same result |
+| `test_thursday_regression.py` | 34 | All 7 fixtures with and without a goal, identifier-like targets, confidence and evidence, leakage kept, D7 |
+| **Total** | **346** | |
 
 Real data: the 6 HumanResources tables from Sanjay's profiling output (with correlations) run through the entry point with Vinitha's corrected Employee findings. Result: no crash; the Employee table with `VacationHours` chosen as the target gives regression (0.80), a strong leakage flag on `SickLeaveHours` (0.98) and quality notes; the other five tables correctly say "review required" because no column looks like an outcome.
 
@@ -60,5 +63,5 @@ The thresholds in 1 (20% and 80%) are proposed defaults, not from the SRS.
 ## 5. Evidence
 
 - Code and tests: GitHub, `semantic_detection/`, branch `samarth-leakage-check` (pull request on top of PR #2).
-- Run it: `python -m pytest -q` (281 passed) and `python run_detection.py --profiles profiles --quality outputs/vinitha_employee_rerun_converted.json --quality-dataset HumanResources.Employee.xlsx --override HumanResources.Employee.xlsx=VacationHours`.
+- Run it: `python -m pytest -q` (346 passed) and `python run_detection.py --profiles profiles --quality outputs/vinitha_employee_rerun_converted.json --quality-dataset HumanResources.Employee.xlsx --override HumanResources.Employee.xlsx=VacationHours`.
 - Output structure: `handoff_result.schema.json` and `docs/HANDOFF_CONTRACT.md`.

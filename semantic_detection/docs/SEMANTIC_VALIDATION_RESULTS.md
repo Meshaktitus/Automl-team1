@@ -27,7 +27,7 @@ With a goal: churn gives binary_classification (`churn`), sales gives forecastin
 
 | Check | Result |
 |---|---|
-| Semantic detection across all fixture types | Pass; 44 of 44 labels earlier, same labels after the D7 fix |
+| Semantic detection across all fixture types | 44 of 44 labels on the raw data; **43 of 44 on profile-built input** (D8: `contact` phone numbers labelled `text`) |
 | Identifier and date detection | Pass for `*_id` columns, `signup_date`, `date`, `rated_on`; **D7 found and fixed** (see section 5) |
 | Target detection with several candidate columns | Pass; ranked candidates are returned, the top one is not forced |
 | Classification and regression identification | Pass (churn, house price) |
@@ -51,6 +51,7 @@ This is the leakage check of **this module** (a column too close to the target).
 
 | # | Finding | Action | Retest |
 |---|---|---|---|
+| D8 | Phone numbers in a unique-value column are labelled `text` when read from a profile (only 10 values are in the profile) | Open; proposed fix needs approval | n/a |
 | D7 | Compact whole-number columns (`hour_of_day` 0 to 23, month 1 to 12) were labelled `identifier` when read from a profile | **Fixed** in `profiling_integration.py` | 2 tests failed on the old code, all pass now; a truly unique consecutive column is still an identifier |
 | D1 | A goal naming a column does not choose it as the target | Open; rule needs approval | n/a |
 | D2 | Anomaly and recommendation need a goal; no shape rule | Open; rule needs approval | n/a |
