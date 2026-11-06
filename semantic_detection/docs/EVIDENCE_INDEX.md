@@ -63,7 +63,7 @@ Repo: github.com/Meshaktitus/Automl-team1, folder `semantic_detection/`. Latest 
 
 ## Update, Thu 5 Nov 2026
 
-Test count is now **346 passing** (the 281 above is the 30 Oct figure; the full run saved in `TEST_EXECUTION_EVIDENCE.txt` is from that date). New since then:
+Test count is now **377 passing** (the 281 above is the 30 Oct figure; the full run saved in `TEST_EXECUTION_EVIDENCE.txt` is from that date). New since then:
 
 | What | File |
 |---|---|
@@ -71,3 +71,14 @@ Test count is now **346 passing** (the 281 above is the 30 Oct figure; the full 
 | Behaviour-to-test coverage report | `docs/MODULE_COVERAGE_REPORT.md` |
 | Defect D7 (fixed) | `docs/DEFECT_REGISTER.md` |
 | Integration and input-validation tests | `tests/test_integration_day3.py`, `tests/test_input_validation.py`, `tests/test_thursday_regression.py` |
+
+## Added 6 Nov 2026 (Meshak's review)
+
+| Item | File |
+|---|---|
+| Approved-features fix and tests | `run_detection.py` (`review_decisions_to_arguments`, `--review-decisions`), `tests/test_review_decisions.py` |
+| Quality report fields, issue types, severities, real examples | `docs/QUALITY_REPORT_CONTRACT.md` |
+| Preprocessing: supported, unsupported, pending | `docs/PREPROCESSING_ROLE_MAPPING.md` section 4 |
+| Leakage limits and HR relationship | `docs/LEAKAGE_AND_HR_VALIDATION.md` |
+| Real-input tests | `tests/test_real_inputs.py`, `samples/input_quality_Employee_rerun.json` |
+| Pending decisions | `docs/OPEN_DECISIONS.md` |

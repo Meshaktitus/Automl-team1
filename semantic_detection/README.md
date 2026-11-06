@@ -14,7 +14,11 @@ This module reads the profiling output (Sanjay) and the data quality output (Vin
 | Understand what this stage does, its inputs and outputs, error handling, and what is tested versus proposed | `docs/PIPELINE_STAGE_SEMANTIC_DETECTION.md` |
 | Know exactly what the output contains (for preprocessing and AutoML) | `docs/HANDOFF_CONTRACT.md` and `handoff_result.schema.json` |
 | See a real input and a real output | `samples/` |
-| See the test results and the open cases | `docs/TEST_REPORT.md` |
+| See the test results and the open cases | `docs/TEST_REPORT.md` (fixture tests and real-input tests are listed separately) |
+| What I read from Vinitha's quality report | `docs/QUALITY_REPORT_CONTRACT.md` |
+| What matches Sinchana's preprocessing and what does not | `docs/PREPROCESSING_ROLE_MAPPING.md` section 4 |
+| Leakage check, its limits, and the HR `SickLeaveHours` / `VacationHours` question | `docs/LEAKAGE_AND_HR_VALIDATION.md` |
+| Pending decisions and integration items | `docs/OPEN_DECISIONS.md` |
 | Read the rules behind the detection | `docs/SEMANTIC_PROBLEM_SPEC.md` |
 | See what the backend and frontend teams need to decide, and what is proposed versus finalized | `docs/INTEGRATION_REQUIREMENTS.md` |
 
@@ -24,7 +28,13 @@ This module reads the profiling output (Sanjay) and the data quality output (Vin
 python run_detection.py --profiles <folder with *.profile.json> --quality <quality report .json> --output <result .json>
 ```
 
-Optional: `--goal "<business goal in plain words>"`, `--override <dataset>=<target column>` (can be repeated), `--problem-type <type>`.
+Optional: `--review-decisions <file.json>` (the user's choices from the review screen: target, problem type, approved feature columns, goal; see `samples/input_review_decisions_Employee.json`), `--goal "<business goal in plain words>"`, `--override <dataset>=<target column>` (can be repeated), `--problem-type <type>`.
+
+The review file's `dataset_id` must match the profile's `dataset_reference.dataset_id` (for example `HumanResources.Employee`, or the name `HumanResources.Employee.xlsx`). If it does not, the result keeps `features_status: recommended_pending_confirmation` and a warning names the datasets that were expected. Training stays blocked until the target, the problem type and the feature columns are approved; `review_required` never trains.
+
+From Python: `run_detection(profiles, quality=..., **review_decisions_to_arguments(decisions))`.
+
+Status: Proposed, pending verification. The module is tested on its own; the end-to-end run with preprocessing and AutoML has not been done (see `docs/OPEN_DECISIONS.md`).
 
 Tests (needs `pytest` and `jsonschema`):
 

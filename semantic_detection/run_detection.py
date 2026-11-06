@@ -211,6 +211,39 @@ def build_column_roles(group, target, time_columns, quality_by_column,
     return roles
 
 
+def review_decisions_to_arguments(decisions):
+    """Turn what the review screen sends back (one payload per dataset, see
+    review_decisions.schema.json) into run_detection arguments:
+        run_detection(profiles, **review_decisions_to_arguments(payloads))
+    dataset_id must be the one in the profile (dataset_reference.dataset_id).
+    Accepts one payload (dict) or a list of payloads."""
+    if isinstance(decisions, dict):
+        decisions = [decisions]
+    if not isinstance(decisions, list) or not decisions:
+        raise ValueError("Review decisions must be a payload or a list of "
+                         "payloads")
+    overrides, approved, problem_types, goals = {}, {}, {}, set()
+    for item in decisions:
+        if not isinstance(item, dict) or not item.get("dataset_id"):
+            raise ValueError("Every review decision needs a dataset_id")
+        dataset = item["dataset_id"]
+        if item.get("target"):
+            overrides[dataset] = item["target"]
+        if item.get("problem_type"):
+            problem_types[dataset] = item["problem_type"]
+        if item.get("approved_feature_columns") is not None:
+            approved[dataset] = list(item["approved_feature_columns"])
+        if item.get("goal"):
+            goals.add(item["goal"])
+    if len(goals) > 1:
+        raise ValueError("Review decisions carry different goals; run one "
+                         "goal at a time")
+    return {"overrides": overrides or None,
+            "problem_type_override": problem_types or None,
+            "approved_feature_columns": approved or None,
+            "goal": next(iter(goals), None)}
+
+
 def run_detection(profiles, quality=None, goal=None, overrides=None,
                   problem_type_override=None, quality_dataset=None,
                   quality_settings=None, approved_feature_columns=None,
@@ -272,6 +305,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
         approved_feature_columns = {
             aliases.get(_key(d), d): c
             for d, c in approved_feature_columns.items()}
+    if isinstance(problem_type_override, dict):
+        problem_type_override = {
+            aliases.get(_key(d), d): t
+            for d, t in problem_type_override.items()}
     overrides = {aliases.get(_key(d), d): c
                  for d, c in dict(overrides or {}).items()}
     unknown = [d for d in overrides if d not in datasets]
@@ -308,7 +345,10 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
 
         problem = detect_problem(
             report, dataset, target=target, business_goal=goal,
-            problem_type_override=problem_type_override)
+            problem_type_override=(
+                problem_type_override.get(dataset)
+                if isinstance(problem_type_override, dict)
+                else problem_type_override))
         if routed is not None:
             problem = apply_quality_to_problem(
                 problem, routed, dataset, settings=quality_settings)
@@ -395,6 +435,19 @@ def run_detection(profiles, quality=None, goal=None, overrides=None,
                     warnings.append(
                         "Approved columns that are not usable features: "
                         + ", ".join(rejected))
+        if approved_feature_columns is not None and approved is None:
+            if isinstance(approved_feature_columns, dict):
+                warnings.append(
+                    "approved_feature_columns was given but has no entry "
+                    f"for this dataset (entries for: "
+                    f"{', '.join(map(str, approved_feature_columns)) or 'none'}"
+                    "); features stay recommended_pending_confirmation. Use "
+                    "the dataset_id or name exactly as in the profile")
+            else:
+                warnings.append(
+                    "approved_feature_columns was given as a plain list but "
+                    f"{len(datasets)} datasets are in this run, so it was "
+                    "not applied; pass {dataset: [columns]} instead")
         pcols = profile_columns[dataset]
         target_stats = target_statistics(
             pcols.get(target) if target else None,
@@ -536,6 +589,9 @@ def main():
                         help="DATASET=COLUMN (repeatable)")
     parser.add_argument("--problem-type",
                         help="Override: " + ", ".join(SUPPORTED_PROBLEM_TYPES))
+    parser.add_argument("--review-decisions",
+                        help="JSON file with the review screen's payload(s): "
+                        "target, problem_type, approved_feature_columns")
     parser.add_argument("--output", default=str(DEFAULT_OUTPUT))
     args = parser.parse_args()
 
@@ -547,15 +603,27 @@ def main():
         dataset, column = item.split("=", 1)
         overrides[dataset.strip()] = column.strip()
 
+    extra = {}
+    if args.review_decisions:
+        try:
+            with open(args.review_decisions, encoding="utf-8") as handle:
+                extra = review_decisions_to_arguments(json.load(handle))
+        except (ValueError, OSError) as error:
+            print(f"Could not read review decisions: {error}")
+            return
+
     files = sorted(Path(args.profiles).glob("*.profile.json"))
     if not files:
         print(f"No *.profile.json files found in {args.profiles}")
         return
     try:
         results = run_detection(
-            files, quality=args.quality, goal=args.goal,
-            overrides=overrides, problem_type_override=args.problem_type,
-            quality_dataset=args.quality_dataset)
+            files, quality=args.quality, goal=extra.get("goal") or args.goal,
+            overrides={**overrides, **(extra.get("overrides") or {})},
+            problem_type_override=(extra.get("problem_type_override")
+                                   or args.problem_type),
+            quality_dataset=args.quality_dataset,
+            approved_feature_columns=extra.get("approved_feature_columns"))
     except (ValueError, OSError, json.JSONDecodeError) as error:
         print(f"Could not run: {error}")
         return

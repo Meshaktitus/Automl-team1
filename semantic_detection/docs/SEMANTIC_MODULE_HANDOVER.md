@@ -20,7 +20,7 @@ A missing, incomplete or failed profile gives a `review_required` result with a 
 ## 3. How to run and test
 
 - Run: `python run_detection.py --profiles <folder with *.profile.json> --quality <quality report .json> --output <result .json>` (options in `README.md`).
-- Test: `python -m pytest -q` gives **346 passed**. Evidence: `docs/TEST_EXECUTION_EVIDENCE.txt`, `docs/TEST_REPORT.md`, `docs/MODULE_COVERAGE_REPORT.md`, `docs/SEMANTIC_VALIDATION_RESULTS.md`.
+- Test: `python -m pytest -q` gives **377 passed**. Evidence: `docs/TEST_EXECUTION_EVIDENCE.txt`, `docs/TEST_REPORT.md`, `docs/MODULE_COVERAGE_REPORT.md`, `docs/SEMANTIC_VALIDATION_RESULTS.md`.
 
 ## 4. Acceptance criteria (plan section 4.3)
 

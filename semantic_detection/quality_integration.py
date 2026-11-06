@@ -39,6 +39,7 @@ DEFAULT_OUTPUT = (
 
 SEVERITY_ALIASES = {
     "info": "warning", "low": "warning", "warning": "warning",
+    "warning / audit": "warning",   # seen in Vinitha's Employee re-run
     "medium": "medium",
     "high": "error", "error": "error",
     "blocking": "blocking",

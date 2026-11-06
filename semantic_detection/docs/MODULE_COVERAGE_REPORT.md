@@ -1,6 +1,6 @@
 # Module coverage report: Semantic Understanding, Target Detection and Problem Classification
 
-Owner: Samarth (Team 1). Date: Thu 5 Nov 2026. Status: **Proposed — Pending Review**. Total: **346 tests, all passing**.
+Owner: Samarth (Team 1). Date: Thu 5 Nov 2026. Status: **Proposed — Pending Review**. Total: **377 tests, all passing**.
 This report maps behaviour to tests. It is not a line-coverage percentage; no line-coverage tool was run.
 
 ## 1. Tests per file

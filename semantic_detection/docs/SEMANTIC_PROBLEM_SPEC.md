@@ -110,7 +110,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 
 ## 8. Test report
 
-346 test cases, 346 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
+377 test cases, 377 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
 
 **Correct:** HR-style columns; value-based email, phone, percentage, date, time, currency, flags; ranking and exclusions; all 7 problem types on synthetic data; override precedence; goal feasibility; quality severities; profile adapter.
 

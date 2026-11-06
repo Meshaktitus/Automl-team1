@@ -1,7 +1,7 @@
 # Semantic validation results: Thursday 5 Nov 2026
 
 Module: Semantic Understanding, Target Detection and Problem Classification. Owner: Samarth (Team 1). Status: **Proposed — Pending Review**.
-Tests: **346 passed, 0 failed** (`python -m pytest`). Commits on pull request #3: `fd21ac8`, `48926ca`, and the commit that adds this document.
+Tests: **377 passed, 0 failed** (`python -m pytest`). Commits on pull request #3: `fd21ac8`, `48926ca`, and the commit that adds this document.
 
 ## 1. How the checks were run
 

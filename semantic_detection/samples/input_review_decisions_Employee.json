@@ -1,7 +1,10 @@
 {
-  "dataset_id": "Employee",
+  "dataset_id": "HumanResources.Employee",
   "goal": null,
   "target": "VacationHours",
   "problem_type": "regression",
-  "approved_feature_columns": ["SickLeaveHours", "JobTitle", "HireDate"]
+  "approved_feature_columns": [
+    "SickLeaveHours",
+    "JobTitle"
+  ]
 }
