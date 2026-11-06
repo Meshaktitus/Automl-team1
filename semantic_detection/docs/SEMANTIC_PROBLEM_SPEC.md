@@ -2,7 +2,7 @@
 
 Owner: Samarth (Team 1). Status as of Mon 26 Oct 2026: **Implemented and tested as a prototype; proposed, pending Team 1 review.** Nothing here is final until Meshak and the dependent owners agree it.
 
-Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `make_synthetic_datasets.py`. Tests: 163 test cases, all passing. Output contract for the AutoML handoff: `docs/HANDOFF_CONTRACT.md`.
+Modules: `semantic_rules.py`, `analyze_semantics.py`, `target_suggestions.py`, `problem_detection.py`, `quality_integration.py`, `profiling_integration.py`, `run_detection.py` (single entry point), `leakage_checks.py` (correlation-based leakage flags), `handoff_result.schema.json` (output schema), `handoff_details.py` (target statistics, preprocessing hints, time info, validation warnings), `make_synthetic_datasets.py`. Tests: 281 test cases, all passing. Output contract for the AutoML handoff (revision 3, after Sumanth's review; to be agreed with Sinchana and the reviewer): `docs/HANDOFF_CONTRACT.md`.
 
 ---
 
@@ -77,7 +77,7 @@ Supported: binary_classification, multiclass_classification, regression, forecas
 
 **Profiling (Sanjay, contract 1.0-draft).** `profiling_integration.py` reads `*.profile.json`, rejects failed profiles and other versions, and checks the required column fields (`name, dtype, inferred_type, missing_count, missing_pct, unique_count, likely_identifier`). Because a profile has no raw values, it rebuilds a small stand-in sample from the summary and top values, runs the same rules, and uses `likely_identifier` and `inferred_type: text` as extra evidence. Output is the same report layout as section 2.
 
-**Quality (Vinitha).** `quality_integration.py` accepts the issue list as `detected_issues` or `issues`, a column as `column` or `affected_column`, and a `dataset` on each issue or once at the top of the report. Confirmed by the Data Quality Engine on 27 Oct: rule IDs `NULL_CHECK`, `DUP_ROW`, `INVALID_RANGE`, `OUTLIER_IQR` with severities Warning and Blocking; `DUP_ROW` is table-level (column null); null findings are notes only. The earlier `RULE_*` names and Low/Medium/High labels are still accepted. Severity levels (**penalty values are proposed, not yet agreed**):
+**Quality (Vinitha).** `quality_integration.py` accepts the issue list as `detected_issues` or `issues`, a column as `column` or `affected_column`, and a `dataset` on each issue or once at the top of the report. Confirmed by the Data Quality Engine on 27 Oct: rule IDs `NULL_CHECK`, `DUP_ROW`, `INVALID_RANGE`, `OUTLIER_IQR` with severities Warning and Blocking; `DUP_ROW` is table-level (column null); null findings are notes only. The earlier `RULE_*` names and Low/Medium/High labels are still accepted. Severity levels (**the penalty values are not in the SRS; they are configurable proposed defaults until approved**, set through `quality_settings`):
 
 | Level (labels) | Effect on target suggestion | Effect on problem type |
 |---|---|---|
@@ -86,9 +86,9 @@ Supported: binary_classification, multiclass_classification, regression, forecas
 | error (High, Error) | score x0.6, confidence Low, loses Top/Alternative label | confidence -0.10, needs confirmation |
 | blocking (Blocking) | score x0, "Blocked by quality", ranked last | confidence -0.30, "do not train" warning |
 
-Note only, whatever the severity: rules about nulls (`NULL_CHECK`, `RULE_NULL_*`), duplicate rows, missing, constant, key and reference checks (the ranking already handles missing and constant columns; key and duplicate checks are about the table), and any issue affecting 0 rows. `INVALID_RANGE` at Blocking does block the column. One issue may name several columns (`A, B` or `A + B`). `affected_rows` may be a number, a count with percentage, or text. A user override is never overridden by quality.
+Note only, whatever the severity: rules about nulls (`NULL_CHECK`, `RULE_NULL_*`), duplicate rows, missing, constant, key and reference checks (the ranking already handles missing and constant columns; key and duplicate checks are about the table), and any issue affecting 0 rows. `INVALID_RANGE` at Blocking does block the column; a Blocking finding should make a target ineligible only when it genuinely makes it unsuitable (Meshak, 27 Oct). One issue may name several columns (`A, B` or `A + B`). `affected_rows` may be a number, a count with percentage, or text. A user override is never overridden by quality.
 
-**Single entry point (`run_detection.py`).** One call takes profiles, an optional quality report, an optional business goal and optional user overrides, and returns one result per dataset (target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, semantic columns). The output fields are defined in `docs/HANDOFF_CONTRACT.md`.
+**Single entry point (`run_detection.py`).** One call takes profiles, an optional quality report, an optional business goal and optional user overrides, and returns one result per dataset (target, problem type, confidence, evidence, alternatives, warnings, ranked candidates, semantic columns, recommended and approved feature columns, a role, reason and preprocessing hint for every column, target statistics, dataset characteristics, validation warnings, leakage-check status). A suggested target is never treated as confirmed (`target_confirmed`). `detect_dataset` does one dataset per call. Roles are recommendations with evidence, not decisions. The output fields are defined in `docs/HANDOFF_CONTRACT.md`.
 
 ## 6. Baseline checklist (status)
 
@@ -98,7 +98,7 @@ Note only, whatever the severity: rules about nulls (`NULL_CHECK`, `RULE_NULL_*`
 | Examples for dates, IDs, emails, percentages, categories, amounts | Implemented, tested |
 | Synthetic task datasets: churn (classification), house price (regression), sales (forecasting), customer segments (clustering), transactions (anomaly), ratings (recommendation), ambiguous targets | Implemented |
 | Ambiguous-target cases | Implemented, tested |
-| Target-leakage checks | **Design only / not built** (needs correlations from profiling, Day 4) |
+| Target-leakage checks | **Partly implemented (27 Oct).** Uses Sanjay's `correlations[]`: flags columns with correlation of at least 0.80 (possible) or 0.95 (strong) with a numerical target; flagged columns are kept and warned about, not removed. Thresholds are proposed defaults. Not covered: categorical targets, derived columns, time-based leakage. Status is `pending_integration` when a profile has no correlations |
 
 ## 7. Results on the HR data (Employee, EmployeePayHistory)
 
@@ -110,7 +110,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 
 ## 8. Test report
 
-163 test cases, 163 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
+281 test cases, 281 passing across semantic rules, target suggestions, problem detection, quality integration, profiling integration, cross-domain datasets (healthcare, banking, telecom, education, retail, anonymous columns, empty column) and the entry point.
 
 **Correct:** HR-style columns; value-based email, phone, percentage, date, time, currency, flags; ranking and exclusions; all 7 problem types on synthetic data; override precedence; goal feasibility; quality severities; profile adapter.
 
@@ -128,7 +128,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 - Business objective and final target for the HR data: must come from the project owner.
 - Quality penalty values above are a proposal and still need Meshak's agreement. Vinitha confirmed the rule IDs, the Warning/Blocking meaning and that null findings are notes only. Real quality output for the HumanResources tables has not been received; her sample was for a different dataset (`hr_employee_attrition_data.csv`) and contained stray text ("[cite: 6]").
 - "Top suggestion" needs an outcome-like word in the column name; otherwise the user confirms the target.
-- Target-leakage checks not built.
+- Target-leakage checks are partial: numerical targets only, straight-line correlation only; thresholds are proposed defaults.
 - The profile-based report is an approximation; verified on 40 of 40 columns here, to be re-checked on other datasets.
 - A mistyped dataset name in the quality tool returns an empty table without a warning.
 
@@ -139,7 +139,7 @@ No column clearly looks like an outcome, and `CurrentFlag` is 1 for all 290 empl
 | Semantic detector, target ranking, problem-type rules, overrides | Implemented |
 | Quality and profiling integration | Implemented |
 | Single integrated entry point (profile + quality + semantic + target + problem) | Implemented (done 27 Oct, ahead of the Wed 28 Oct plan) |
-| Handoff contract to AutoML (Sumanth) | Draft written (`docs/HANDOFF_CONTRACT.md`), pending Meshak's review |
-| Target-leakage checks | Design only |
-| Final target for HR data | Not needed for the application (the user supplies goal and overrides at run time); the HR demo objective is to be confirmed separately with Meshak |
+| Handoff contract to AutoML (Sumanth) and preprocessing (Sinchana) | Draft revision 3 written (after Meshak's and Sumanth's reviews: feature columns, roles, target statistics, preprocessing hints, defined allowed values); fields still to be agreed with Sinchana, then shared for review before it is frozen |
+| Target-leakage checks | Partly implemented: correlation-based flags for numerical targets (see limits) |
+| Final target for HR data | Not needed for the application (the user supplies goal and overrides at run time). The HR demo objective needs project-owner confirmation; `VacationHours` has been discussed as a possible target only |
 | Code submission method | Blocked (no Git; needs Meshak) |

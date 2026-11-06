@@ -1,0 +1,157 @@
+======================================================================
+Customer churn (classification) - 1. suggestion only
+  dataset_id          : ds-churn_classification.csv
+  target              : churn
+  target_source       : top_suggestion
+  target_confirmed    : False
+  problem_type        : binary_classification
+  confidence          : 0.85
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ["Target 'churn' is categorical with 2 distinct values."]
+  alternatives        : []
+  recommended features: ['age', 'monthly_spend', 'num_orders', 'support_tickets']
+  leakage_checks      : checked []
+  warnings            : []
+  training blockers   : ['problem type is not confirmed (needs_confirmation)', 'target is not confirmed by the user', 'features are not approved by the user']
+======================================================================
+Customer churn (classification) - 2. user picked the target
+  dataset_id          : ds-churn_classification.csv
+  target              : churn
+  target_source       : user_override
+  target_confirmed    : True
+  problem_type        : binary_classification
+  confidence          : 0.85
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ["Target 'churn' is categorical with 2 distinct values."]
+  alternatives        : []
+  recommended features: ['age', 'monthly_spend', 'num_orders', 'support_tickets']
+  leakage_checks      : checked []
+  warnings            : []
+  training blockers   : ['problem type is not confirmed (needs_confirmation)', 'features are not approved by the user']
+======================================================================
+Customer churn (classification) - 3. user overrides with 'customer_id' (override wins)
+  dataset_id          : ds-churn_classification.csv
+  target              : customer_id
+  target_source       : user_override
+  target_confirmed    : True
+  problem_type        : review_required
+  confidence          : 0.3
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ["Target 'customer_id' is identifier with 500 distinct values."]
+  alternatives        : []
+  recommended features: ['age', 'monthly_spend', 'num_orders', 'support_tickets', 'churn']
+  leakage_checks      : checked []
+  warnings            : ["Target type 'identifier' cannot be predicted directly; pick another column"]
+  training blockers   : ['problem type is review_required: a person must choose a target or a problem type and the module must run again']
+======================================================================
+Customer churn (classification) - 4. target + problem type + features approved
+  dataset_id          : ds-churn_classification.csv
+  target              : churn
+  target_source       : user_override
+  target_confirmed    : True
+  problem_type        : binary_classification
+  confidence          : 1.0
+  source              : user_override
+  needs_confirmation  : False
+  features_status     : approved
+  evidence            : ['Problem type selected by the user.']
+  alternatives        : []
+  recommended features: ['age', 'monthly_spend', 'num_orders', 'support_tickets']
+  leakage_checks      : checked []
+  warnings            : []
+  training blockers   : []
+======================================================================
+House price (regression) - 1. suggestion only
+  dataset_id          : ds-house_price_regression.csv
+  target              : price
+  target_source       : top_suggestion
+  target_confirmed    : False
+  problem_type        : regression
+  confidence          : 0.8
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ["Target 'price' is financial_amount with 400 distinct values."]
+  alternatives        : []
+  recommended features: ['area_sqft', 'bedrooms', 'city', 'year_built']
+  leakage_checks      : checked ['area_sqft']
+  warnings            : ["Possible target leakage: 'area_sqft' moves almost together with the target (correlation +0.99). Check that it is known before the outcome and is not a copy of it."]
+  training blockers   : ['problem type is not confirmed (needs_confirmation)', 'target is not confirmed by the user', 'features are not approved by the user']
+======================================================================
+House price (regression) - 2. user picked the target
+  dataset_id          : ds-house_price_regression.csv
+  target              : price
+  target_source       : user_override
+  target_confirmed    : True
+  problem_type        : regression
+  confidence          : 0.8
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ["Target 'price' is financial_amount with 400 distinct values."]
+  alternatives        : []
+  recommended features: ['area_sqft', 'bedrooms', 'city', 'year_built']
+  leakage_checks      : checked ['area_sqft']
+  warnings            : ["Possible target leakage: 'area_sqft' moves almost together with the target (correlation +0.99). Check that it is known before the outcome and is not a copy of it."]
+  training blockers   : ['problem type is not confirmed (needs_confirmation)', 'features are not approved by the user']
+======================================================================
+House price (regression) - 3. user overrides with 'house_id' (override wins)
+  dataset_id          : ds-house_price_regression.csv
+  target              : house_id
+  target_source       : user_override
+  target_confirmed    : True
+  problem_type        : review_required
+  confidence          : 0.3
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ["Target 'house_id' is identifier with 400 distinct values."]
+  alternatives        : []
+  recommended features: ['area_sqft', 'bedrooms', 'city', 'year_built', 'price']
+  leakage_checks      : checked []
+  warnings            : ["Target type 'identifier' cannot be predicted directly; pick another column"]
+  training blockers   : ['problem type is review_required: a person must choose a target or a problem type and the module must run again']
+======================================================================
+House price (regression) - 4. target + problem type + features approved
+  dataset_id          : ds-house_price_regression.csv
+  target              : price
+  target_source       : user_override
+  target_confirmed    : True
+  problem_type        : regression
+  confidence          : 1.0
+  source              : user_override
+  needs_confirmation  : False
+  features_status     : approved
+  evidence            : ['Problem type selected by the user.']
+  alternatives        : []
+  recommended features: ['area_sqft', 'bedrooms', 'city', 'year_built']
+  leakage_checks      : checked ['area_sqft']
+  warnings            : ["Possible target leakage: 'area_sqft' moves almost together with the target (correlation +0.99). Check that it is known before the outcome and is not a copy of it."]
+  training blockers   : []
+/usr/local/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:3036: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+/usr/local/lib/python3.13/site-packages/numpy/lib/_function_base_impl.py:3037: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+======================================================================
+No clear target (ambiguous columns)
+  dataset_id          : ds-ambiguous_targets.csv
+  target              : None
+  target_source       : none
+  target_confirmed    : False
+  problem_type        : review_required
+  confidence          : 0.3
+  source              : data_rules
+  needs_confirmation  : True
+  features_status     : recommended_pending_confirmation
+  evidence            : ['No target column selected.']
+  alternatives        : ['clustering']
+  recommended features: ['score', 'status', 'level', 'pct_complete', 'is_active', 'amount']
+  leakage_checks      : not_checked []
+  warnings            : ['No column clearly looks like an outcome; the project owner or user must confirm the business objective and target']
+  training blockers   : ['problem type is review_required: a person must choose a target or a problem type and the module must run again']

@@ -410,3 +410,14 @@ def test_report_for_a_different_dataset_is_not_applied():
          "affected_column": "age", "affected_rows": 2}]}
     after = apply_quality_to_suggestions(suggestions, report, "d.csv")
     assert row_for(after, "age")["priority"] != "Blocked by quality"
+
+
+def test_report_with_several_datasets_in_one_file():
+    report = load_quality_report([
+        {"dataset": "A.xlsx", "total_rows": 5, "issues": [
+            {"rule_id": "NULL_CHECK", "severity": "Error",
+             "affected_column": "x", "affected_rows": 2}]},
+        {"dataset": "B.xlsx", "total_rows": 3, "issues": []},
+    ])
+    assert len(report["detected_issues"]) == 1
+    assert report["detected_issues"][0]["dataset"] == "A.xlsx"

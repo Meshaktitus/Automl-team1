@@ -26,6 +26,10 @@ DEFAULT_REPORT = PROJECT_FOLDER / "outputs" / "semantic_analysis_report.csv"
 DEFAULT_OUTPUT = PROJECT_FOLDER / "outputs" / "problem_type_recommendations.csv"
 STATUS = "Proposed, pending verification"
 
+# Proposed defaults (not from the SRS): how much of the target may be empty.
+TARGET_MISSING_WARN = 20     # percent: warn and lower the confidence
+TARGET_MISSING_BLOCK = 80    # percent: nothing can be recommended
+
 SUPPORTED_PROBLEM_TYPES = [
     "binary_classification", "multiclass_classification", "regression",
     "forecasting", "clustering", "anomaly_detection", "recommendation",
@@ -159,6 +163,7 @@ def _target_info(group, target):
         "column": str(row["column"]),
         "semantic_type": semantic_type,
         "n_unique": n_unique,
+        "missing_pct": _number(row.get("missing_pct")) or 0.0,
         "problem": base_problem_type(semantic_type, n_unique),
         "sensitive": _truthy(row.get("sensitive", False)),
     }
@@ -309,13 +314,27 @@ def detect_problem(report, dataset, target=None, business_goal=None,
                     f"({n_features} usable feature columns)")
     else:
         problem = info["problem"]
+        missing_pct = info["missing_pct"]
+        forced_review = False
+        if missing_pct >= TARGET_MISSING_BLOCK:
+            problem, forced_review = "review_required", True
+            warnings.append(f"Target '{info['column']}' is {missing_pct:g}% "
+                            "missing; too little data to learn from. Pick "
+                            "another column")
+        elif info["n_unique"] is not None and info["n_unique"] <= 1:
+            problem, forced_review = "review_required", True
+            warnings.append(f"Target '{info['column']}' has "
+                            f"{int(info['n_unique'])} distinct value(s); "
+                            "there is nothing to learn. Pick another column")
         out["problem_type"] = problem
         n_unique = info["n_unique"]
         distinct = f"{int(n_unique)} distinct values" if n_unique is not None \
             else "unknown number of distinct values"
         evidence.append(f"Target '{info['column']}' is "
                         f"{info['semantic_type']} with {distinct}.")
-        if problem.endswith("classification"):
+        if forced_review:
+            confidence = 0.3
+        elif problem.endswith("classification"):
             confidence = 0.85
             if n_unique is not None and n_unique > 20:
                 confidence = 0.60
@@ -335,6 +354,12 @@ def detect_problem(report, dataset, target=None, business_goal=None,
         else:
             warnings.append(f"Target type '{info['semantic_type']}' cannot "
                             "be predicted directly; pick another column")
+        if not forced_review and missing_pct >= TARGET_MISSING_WARN \
+                and problem != "review_required":
+            confidence -= 0.15
+            warnings.append(f"Target '{info['column']}' is {missing_pct:g}% "
+                            "missing; rows without a target value cannot "
+                            "be used for training")
         if info["sensitive"]:
             warnings.append("Target is a sensitive attribute; review "
                             "fairness and privacy")
