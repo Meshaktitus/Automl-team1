@@ -1,0 +1,11 @@
+Dataset,RuleID,Category,Severity,Column,AffectedRows,Description,Recommendation
+Employee,VAL_NULL_001,Missing Values,Warning,OrganizationNode,1,Column 'OrganizationNode' contains 1 missing values.,Apply imputation or drop rows if target is missing.
+Employee,VAL_NULL_001,Missing Values,Warning,OrganizationLevel,1,Column 'OrganizationLevel' contains 1 missing values.,Apply imputation or drop rows if target is missing.
+Employee,VAL_OUT_001,Statistical Outliers,Warning,OrganizationLevel,6,Column 'OrganizationLevel' has 6 statistical outliers beyond IQR bounds.,Retain data; apply robust scaling or winsorization.
+Employee,VAL_OUT_001,Statistical Outliers,Warning,SalariedFlag,52,Column 'SalariedFlag' has 52 statistical outliers beyond IQR bounds.,Retain data; apply robust scaling or winsorization.
+PayHistory,VAL_DUP_001,Duplicate Identifiers,Blocking Error,BusinessEntityID,26,Identifier column 'BusinessEntityID' contains 26 duplicate entries.,Investigate primary key relationship or composite keys.
+PayHistory,VAL_OUT_001,Statistical Outliers,Warning,Rate,14,Column 'Rate' has 14 statistical outliers beyond IQR bounds.,Retain data; apply robust scaling or winsorization.
+JobCandidate,VAL_NULL_001,Missing Values,Warning,BusinessEntityID,11,Column 'BusinessEntityID' contains 11 missing values.,Apply imputation or drop rows if target is missing.
+EmployeeDepartmentHistory,VAL_NULL_001,Missing Values,Warning,EndDate,290,Column 'EndDate' contains 290 missing values.,Apply imputation or drop rows if target is missing.
+EmployeeDepartmentHistory,VAL_DUP_001,Duplicate Identifiers,Blocking Error,BusinessEntityID,6,Identifier column 'BusinessEntityID' contains 6 duplicate entries.,Investigate primary key relationship or composite keys.
+EmployeeDepartmentHistory,VAL_OUT_001,Statistical Outliers,Warning,DepartmentID,116,Column 'DepartmentID' has 116 statistical outliers beyond IQR bounds.,Retain data; apply robust scaling or winsorization.

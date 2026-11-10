@@ -1,0 +1,5 @@
+Dataset,Issue Description,Affected Count,Severity Level
+Employee,"Missing organizational hierarchy nodes (OrganizationNode, OrganizationLevel)",2 fields (1 row - CEO record),Medium (Warning)
+JobCandidate,Unassigned BusinessEntityID for external applicants prior to hiring conversion,11 records,Medium (Warning)
+EmployeeDepartmentHistory,Open-ended active assignment EndDate entries for current employees,290 records,Low (Informational)
+Department / Pay / Shift,"Zero missing values, zero duplicates, and complete referential integrity",0 records,Pass
