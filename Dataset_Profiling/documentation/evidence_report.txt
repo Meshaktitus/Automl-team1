@@ -1,0 +1,56 @@
+EVIDENCE REPORT - Dataset Profiling (Sanjay)
+Generated: 2026-11-06T11:28:49
+Python 3.15.1 | pandas 3.0.6 | Windows
+
+== 1. Automated tests ==
+93 passed, 0 failed
+
+== 2. Sample JSON files validated against the schemas ==
+OK   sample_profiling_request.json (request schema)
+OK   sample_profiling_request_invalid.json (deliberately invalid, rejected as expected)
+OK   sample_profiling_request_not_found.json (request schema)
+OK   sample_profiling_request_with_target.json (request schema)
+OK   sample_profiling_response.json (response schema) status=warning
+OK   sample_profiling_response_invalid.json (response schema) status=failed
+OK   sample_profiling_response_not_found.json (response schema) status=failed
+OK   sample_profiling_response_with_target.json (response schema) status=warning
+
+== 3. Backend HR tables: expected vs actual size ==
+OK   Department: expected 16x4, actual 16x4, duplicates=0, status=warning, schema-valid=True, identifier values exposed=none
+OK   Employee: expected 290x16, actual 290x16, duplicates=0, status=warning, schema-valid=True, identifier values exposed=none
+OK   EmployeeDepartmentHistory: expected 296x6, actual 296x6, duplicates=0, status=success, schema-valid=True, identifier values exposed=none
+OK   EmployeePayHistory: expected 316x5, actual 316x5, duplicates=0, status=success, schema-valid=True, identifier values exposed=none
+OK   JobCandidate: expected 13x4, actual 13x4, duplicates=0, status=success, schema-valid=True, identifier values exposed=none
+OK   Shift: expected 3x5, actual 3x5, duplicates=0, status=warning, schema-valid=True, identifier values exposed=none
+
+== 4. Error handling (the module returns errors, it never crashes) ==
+file not found: status=failed, errors=['SOURCE_NOT_FOUND'], schema-valid=True
+invalid request: status=failed, errors=['INVALID_REQUEST', 'INVALID_REQUEST', 'INVALID_REQUEST', 'INVALID_REQUEST'], schema-valid=True
+empty request (None): status=failed, errors=['INVALID_REQUEST'], schema-valid=True
+
+== 5. Delivered files ==
+present  profiler.py  (11809 bytes)
+present  profiling_service.py  (9306 bytes)
+present  schema_validation.py  (4959 bytes)
+present  schemas/profiling_request.schema.json  (4245 bytes)
+present  schemas/profiling_response.schema.json  (12837 bytes)
+present  samples/sample_profiling_request.json  (482 bytes)
+present  samples/sample_profiling_response.json  (4196 bytes)
+present  PROFILING_CONTRACT.md  (12227 bytes)
+present  test_profiler.py  (3994 bytes)
+present  test_profiling_contract.py  (10653 bytes)
+present  test_profiling_day4.py  (6432 bytes)
+present  test_profiling_day5.py  (4711 bytes)
+present  test_profiling_manual_checks.py  (3027 bytes)
+present  test_profiling_integration_regression.py  (9071 bytes)
+present  test_profiling_regression.py  (8156 bytes)
+present  benchmark_profiling.py  (4001 bytes)
+present  update_contract_benchmark.py  (2256 bytes)
+
+== 6. Performance benchmark (memory limitation: the whole table is held in memory) ==
+Measured 2026-11-06T11:25:55 on Windows 10, Python 3.15.1, pandas 3.0.6, 4 CPUs, 3 runs per size (median [fastest - slowest], seconds)
+    10,000 rows (1 MB): profiling only 0.18 [0.08 - 0.23], end to end 0.15 [0.08 - 0.20]
+   100,000 rows (14 MB): profiling only 0.77 [0.70 - 1.09], end to end 0.74 [0.74 - 1.07]
+   500,000 rows (71 MB): profiling only 3.34 [3.12 - 3.58], end to end 3.20 [3.16 - 3.23]
+ 1,000,000 rows (142 MB): profiling only 6.35 [6.31 - 6.74], end to end 6.46 [6.37 - 6.49]
+Tables larger than available memory are not supported.

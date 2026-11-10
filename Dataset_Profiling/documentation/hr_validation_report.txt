@@ -1,0 +1,77 @@
+DATASET PROFILING VALIDATION REPORT: six HR datasets (2026-11-06T11:23:00)
+Method: size check against the agreed sizes, plus an independent pandas recomputation of duplicates, missing counts and distinct counts.
+No data values are included; only counts and column names.
+
+Department: 16 rows x 4 columns, duplicate rows 0, status warning
+    PASS  size matches agreed size
+    PASS  row/column count matches recomputation
+    PASS  duplicate rows match recomputation
+    PASS  missing counts match recomputation
+    PASS  distinct counts match recomputation
+    PASS  response valid against schema
+    PASS  no values or statistics for identifier columns
+    columns with missing values: none
+    warnings: CONSTANT_COLUMN on ModifiedDate
+    flagged as identifier-like: DepartmentID
+
+Employee: 290 rows x 16 columns, duplicate rows 0, status warning
+    PASS  size matches agreed size
+    PASS  row/column count matches recomputation
+    PASS  duplicate rows match recomputation
+    PASS  missing counts match recomputation
+    PASS  distinct counts match recomputation
+    PASS  response valid against schema
+    PASS  no values or statistics for identifier columns
+    columns with missing values: OrganizationNode 1 (0.34%), OrganizationLevel 1 (0.34%)
+    warnings: HIGH_CARDINALITY on OrganizationNode, CONSTANT_COLUMN on CurrentFlag
+    flagged as identifier-like: BusinessEntityID, NationalIDNumber, LoginID, rowguid
+
+EmployeeDepartmentHistory: 296 rows x 6 columns, duplicate rows 0, status success
+    PASS  size matches agreed size
+    PASS  row/column count matches recomputation
+    PASS  duplicate rows match recomputation
+    PASS  missing counts match recomputation
+    PASS  distinct counts match recomputation
+    PASS  response valid against schema
+    PASS  no values or statistics for identifier columns
+    columns with missing values: EndDate 290 (97.97%)
+    warnings: none
+    flagged as identifier-like: none
+
+EmployeePayHistory: 316 rows x 5 columns, duplicate rows 0, status success
+    PASS  size matches agreed size
+    PASS  row/column count matches recomputation
+    PASS  duplicate rows match recomputation
+    PASS  missing counts match recomputation
+    PASS  distinct counts match recomputation
+    PASS  response valid against schema
+    PASS  no values or statistics for identifier columns
+    columns with missing values: none
+    warnings: none
+    flagged as identifier-like: none
+
+JobCandidate: 13 rows x 4 columns, duplicate rows 0, status success
+    PASS  size matches agreed size
+    PASS  row/column count matches recomputation
+    PASS  duplicate rows match recomputation
+    PASS  missing counts match recomputation
+    PASS  distinct counts match recomputation
+    PASS  response valid against schema
+    PASS  no values or statistics for identifier columns
+    columns with missing values: BusinessEntityID 11 (84.62%)
+    warnings: none
+    flagged as identifier-like: JobCandidateID, BusinessEntityID
+
+Shift: 3 rows x 5 columns, duplicate rows 0, status warning
+    PASS  size matches agreed size
+    PASS  row/column count matches recomputation
+    PASS  duplicate rows match recomputation
+    PASS  missing counts match recomputation
+    PASS  distinct counts match recomputation
+    PASS  response valid against schema
+    PASS  no values or statistics for identifier columns
+    columns with missing values: none
+    warnings: CONSTANT_COLUMN on ModifiedDate
+    flagged as identifier-like: ShiftID
+
+RESULT: all checks passed.

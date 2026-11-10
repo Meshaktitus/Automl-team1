@@ -1,0 +1,40 @@
+INTEGRATION CHECK: profiling stage (2026-11-06T11:22:42)
+
+PASS  Classification dataset, target 'churned'
+      expected: class_distribution with 2 classes
+      actual:   status=success warnings=[] errors=[]
+PASS  Source table not modified
+      expected: input DataFrame unchanged
+      actual:   status=success warnings=[] errors=[]
+PASS  Regression dataset, numeric target 'price'
+      expected: no class_distribution, CLASS_DISTRIBUTION_SKIPPED (info)
+      actual:   status=warning warnings=['CLASS_DISTRIBUTION_SKIPPED'] errors=[]
+PASS  No target selected
+      expected: profile only, no class_distribution, no failure
+      actual:   status=success warnings=[] errors=[]
+PASS  Target column does not exist
+      expected: failed with TARGET_NOT_FOUND
+      actual:   status=failed warnings=[] errors=['TARGET_NOT_FOUND']
+PASS  Source file missing
+      expected: failed with SOURCE_NOT_FOUND
+      actual:   status=failed warnings=[] errors=['SOURCE_NOT_FOUND']
+PASS  Invalid request
+      expected: failed with INVALID_REQUEST, request_id null
+      actual:   status=failed warnings=[] errors=['INVALID_REQUEST']
+PASS  No location and no table
+      expected: failed with INVALID_REQUEST on dataset_reference.location
+      actual:   status=failed warnings=[] errors=['INVALID_REQUEST']
+PASS  Empty table
+      expected: warning EMPTY_DATASET (not a crash)
+      actual:   status=warning warnings=['EMPTY_DATASET'] errors=[]
+PASS  Constant, empty and mixed columns
+      expected: warning with CONSTANT_COLUMN, EMPTY_COLUMN, MIXED_TYPES
+      actual:   status=warning warnings=['CONSTANT_COLUMN', 'EMPTY_COLUMN', 'MIXED_TYPES'] errors=[]
+PASS  Duplicate column names
+      expected: failed with DUPLICATE_COLUMN_NAMES
+      actual:   status=failed warnings=[] errors=['DUPLICATE_COLUMN_NAMES']
+PASS  demo_customers.csv from a file path
+      expected: 6 rows, 7 columns, class_distribution on 'plan'
+      actual:   status=warning warnings=['CONSTANT_COLUMN', 'EMPTY_COLUMN'] errors=[]
+
+12 of 12 scenarios passed. Cross-module integration is still pending verification.

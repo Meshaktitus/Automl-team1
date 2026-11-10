@@ -1,0 +1,40 @@
+PROFILING BASELINE REPORT (2026-11-06T11:22:26)
+Python 3.15.1 | pandas 3.0.6 | Windows 10
+
+== 1. Existing test suite (failing tests are listed) ==
+93 passed, 0 failing, 0 skipped
+
+== HumanResources.Department ==
+  16 rows x 4 columns | numerical columns checked 0 | frequency tables checked 2 | identifier columns (no statistics by design) 1
+  ALL CHECKS MATCH
+
+== HumanResources.Employee ==
+  290 rows x 16 columns | numerical columns checked 5 | frequency tables checked 4 | identifier columns (no statistics by design) 4
+  ALL CHECKS MATCH
+
+== HumanResources.EmployeeDepartmentHistory ==
+  296 rows x 6 columns | numerical columns checked 3 | frequency tables checked 0 | identifier columns (no statistics by design) 0
+  ALL CHECKS MATCH
+
+== HumanResources.EmployeePayHistory ==
+  316 rows x 5 columns | numerical columns checked 3 | frequency tables checked 0 | identifier columns (no statistics by design) 0
+  ALL CHECKS MATCH
+
+== HumanResources.JobCandidate ==
+  13 rows x 4 columns | numerical columns checked 0 | frequency tables checked 0 | identifier columns (no statistics by design) 2
+  ALL CHECKS MATCH
+
+== HumanResources.Shift ==
+  3 rows x 5 columns | numerical columns checked 0 | frequency tables checked 3 | identifier columns (no statistics by design) 1
+  ALL CHECKS MATCH
+
+== demo_customers ==
+  6 rows x 7 columns | numerical columns checked 2 | frequency tables checked 3 | identifier columns (no statistics by design) 0
+  ALL CHECKS MATCH
+
+== Type detection review (numeric or date storage type not detected as such) ==
+  none found
+
+== Summary ==
+Tables verified: 7 | independent checks: 272 | mismatches: 0 | failing tests: 0
+Defects: see PROFILING_KNOWN_ISSUES.md for the defect register (known issues, fixed defects and limitations).
