@@ -1,0 +1,39 @@
+EVIDENCE REPORT - Dataset Profiling (Sanjay)
+Generated: 2026-10-26T15:32:47
+Python 3.15.1 | pandas 3.0.6 | Windows
+
+== 1. Automated tests ==
+38 passed, 0 failed
+
+== 2. Sample JSON files validated against the schemas ==
+OK   sample_profiling_request.json (request schema)
+OK   sample_profiling_request_invalid.json (deliberately invalid, rejected as expected)
+OK   sample_profiling_request_not_found.json (request schema)
+OK   sample_profiling_response.json (response schema) status=warning
+OK   sample_profiling_response_invalid.json (response schema) status=failed
+OK   sample_profiling_response_not_found.json (response schema) status=failed
+
+== 3. Backend HR tables: expected vs actual size ==
+OK   Department: expected 16x4, actual 16x4, duplicates=0, status=warning, schema-valid=True, identifier values exposed=none
+OK   Employee: expected 290x16, actual 290x16, duplicates=0, status=warning, schema-valid=True, identifier values exposed=none
+OK   EmployeeDepartmentHistory: expected 296x6, actual 296x6, duplicates=0, status=success, schema-valid=True, identifier values exposed=none
+OK   EmployeePayHistory: expected 316x5, actual 316x5, duplicates=0, status=success, schema-valid=True, identifier values exposed=none
+OK   JobCandidate: expected 13x4, actual 13x4, duplicates=0, status=success, schema-valid=True, identifier values exposed=none
+OK   Shift: expected 3x5, actual 3x5, duplicates=0, status=warning, schema-valid=True, identifier values exposed=none
+
+== 4. Error handling (the module returns errors, it never crashes) ==
+file not found: status=failed, errors=['SOURCE_NOT_FOUND'], schema-valid=True
+invalid request: status=failed, errors=['INVALID_REQUEST', 'INVALID_REQUEST', 'INVALID_REQUEST', 'INVALID_REQUEST'], schema-valid=True
+empty request (None): status=failed, errors=['INVALID_REQUEST'], schema-valid=True
+
+== 5. Delivered files ==
+present  profiler.py  (7837 bytes)
+present  profiling_service.py  (8181 bytes)
+present  schema_validation.py  (4959 bytes)
+present  schemas/profiling_request.schema.json  (3347 bytes)
+present  schemas/profiling_response.schema.json  (7036 bytes)
+present  samples/sample_profiling_request.json  (482 bytes)
+present  samples/sample_profiling_response.json  (3762 bytes)
+present  PROFILING_CONTRACT.md  (4488 bytes)
+present  test_profiler.py  (3994 bytes)
+present  test_profiling_contract.py  (9775 bytes)

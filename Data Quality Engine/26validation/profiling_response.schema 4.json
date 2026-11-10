@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:gts:team1:dataset_profiling:response:1.0-draft",
+  "title": "Dataset Profiling Response",
+  "description": "Output of the Dataset Profiling module. Top-level status, dataset, columns and warnings follow the structure accepted by the Team 1 lead. Generic: no dataset-specific fields. Status: proposed, pending Team 1 review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "request_id", "module", "status", "generated_at", "duration_ms",
+               "dataset_reference", "dataset", "columns", "warnings", "errors"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0-draft" },
+    "request_id": { "description": "Echo of the request id. Null if the request had none.", "type": ["string", "null"] },
+    "module": { "type": "string", "const": "dataset_profiling" },
+    "status": {
+      "description": "success = profile produced, no warnings. warning = profile produced, warnings present. failed = no profile produced, see errors.",
+      "type": "string",
+      "enum": ["success", "warning", "failed"]
+    },
+    "generated_at": { "description": "UTC timestamp, ISO 8601.", "type": "string" },
+    "duration_ms": { "type": "number", "minimum": 0 },
+    "dataset_reference": {
+      "description": "Echo of the dataset identity. Null when the request was too invalid to read it. The file location is never echoed.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["dataset_id", "name"],
+      "properties": {
+        "dataset_id": { "type": ["string", "null"] },
+        "name": { "type": ["string", "null"] }
+      }
+    },
+    "dataset": {
+      "description": "Table-level facts. Null when status is failed.",
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/dataset" }]
+    },
+    "columns": {
+      "description": "One entry per column, in source order. Empty when status is failed.",
+      "type": "array",
+      "items": { "$ref": "#/$defs/column" }
+    },
+    "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
+    "errors": { "type": "array", "items": { "$ref": "#/$defs/error" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "failed" } } },
+      "then": {
+        "properties": { "dataset": { "type": "null" }, "columns": { "maxItems": 0 }, "errors": { "minItems": 1 } }
+      },
+      "else": {
+        "properties": { "dataset": { "type": "object" }, "errors": { "maxItems": 0 } }
+      }
+    }
+  ],
+  "$defs": {
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["row_count", "column_count", "column_names", "duplicate_row_count"],
+      "properties": {
+        "row_count": { "type": "integer", "minimum": 0 },
+        "column_count": { "type": "integer", "minimum": 0 },
+        "column_names": { "type": "array", "items": { "type": "string" } },
+        "duplicate_row_count": { "description": "Rows that exactly repeat an earlier row.", "type": "integer", "minimum": 0 }
+      }
+    },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "position", "dtype", "inferred_type", "missing_count", "missing_pct",
+                   "unique_count", "likely_identifier", "warnings"],
+      "properties": {
+        "name": { "type": "string" },
+        "position": { "description": "0-based position in the source table.", "type": "integer", "minimum": 0 },
+        "dtype": { "description": "Storage type as read from the source, for example int64 or object.", "type": "string" },
+        "inferred_type": {
+          "type": "string",
+          "enum": ["numerical", "categorical", "datetime", "time", "text", "boolean", "mixed", "empty"]
+        },
+        "missing_count": { "type": "integer", "minimum": 0 },
+        "missing_pct": { "description": "0 to 100, two decimals.", "type": "number", "minimum": 0, "maximum": 100 },
+        "unique_count": { "description": "Distinct non-missing values.", "type": "integer", "minimum": 0 },
+        "likely_identifier": { "description": "True if declared by the caller or if values are all unique and the name looks like an id.", "type": "boolean" },
+        "warnings": {
+          "description": "Warning codes that apply to this column.",
+          "type": "array",
+          "items": { "type": "string", "enum": ["EMPTY_COLUMN", "CONSTANT_COLUMN", "MIXED_TYPES", "HIGH_CARDINALITY"] }
+        },
+        "summary": {
+          "description": "Optional. numerical: min, max, mean, median, std. datetime: min, max (text). text: avg_length, max_length. A value is null when it cannot be computed.",
+          "type": "object",
+          "additionalProperties": { "type": ["number", "string", "null"] }
+        },
+        "top_values": {
+          "description": "Optional. Most frequent values of categorical, boolean and time columns, most frequent first. Never present for identifier columns.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["value", "count", "percentage"],
+            "properties": {
+              "value": { "description": "Always text.", "type": "string" },
+              "count": { "type": "integer", "minimum": 1 },
+              "percentage": { "description": "Share of non-missing values, 0 to 100.", "type": "number", "minimum": 0, "maximum": 100 }
+            }
+          }
+        },
+        "mixed_breakdown": {
+          "description": "Optional. Only for inferred_type mixed.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["numeric_values", "text_values"],
+          "properties": {
+            "numeric_values": { "type": "integer", "minimum": 0 },
+            "text_values": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "column", "message"],
+      "properties": {
+        "code": { "type": "string", "enum": ["EMPTY_DATASET", "EMPTY_COLUMN", "CONSTANT_COLUMN", "MIXED_TYPES", "HIGH_CARDINALITY", "DUPLICATES_APPROXIMATE"] },
+        "severity": { "type": "string", "enum": ["info", "warning"] },
+        "column": { "description": "Column name, or null for table-level warnings.", "type": ["string", "null"] },
+        "message": { "type": "string" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "field"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": ["INVALID_REQUEST", "SOURCE_NOT_FOUND", "UNSUPPORTED_FORMAT", "DATASET_LOAD_FAILED",
+                   "DUPLICATE_COLUMN_NAMES", "PROFILING_FAILED"]
+        },
+        "message": { "type": "string" },
+        "field": { "description": "Request field the error refers to, or null.", "type": ["string", "null"] }
+      }
+    }
+  }
+}

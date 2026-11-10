@@ -1,0 +1,36 @@
+{
+    "profiler_name": "Sanjay",
+    "dataset": "HumanResources.Employee",
+    "total_rows": 290,
+    "columns": {
+        "BusinessEntityID": {
+            "type": "int64",
+            "null_count": 0,
+            "unique_count": 290
+        },
+        "OrganizationNode": {
+            "type": "object",
+            "null_count": 1,
+            "unique_count": 289
+        },
+        "OrganizationLevel": {
+            "type": "float64",
+            "null_count": 1,
+            "unique_count": 5
+        },
+        "VacationHours": {
+            "type": "int64",
+            "null_count": 0,
+            "min": 0,
+            "max": 99,
+            "iqr_upper": 148.12
+        },
+        "SickLeaveHours": {
+            "type": "int64",
+            "null_count": 0,
+            "min": 20,
+            "max": 80,
+            "iqr_upper": 95.5
+        }
+    }
+}
