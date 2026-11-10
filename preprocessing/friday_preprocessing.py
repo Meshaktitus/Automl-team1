@@ -6,7 +6,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 INPUT_FILE = (
     PROJECT_ROOT / "data" / "raw" / "HumanResources.Employee.xlsx"
