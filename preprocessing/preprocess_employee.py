@@ -4,7 +4,7 @@ import pandas as pd
 
 
 # Project paths
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 INPUT_FILE = (
     PROJECT_ROOT

@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 import numpy as np
 import pandas as pd
 
-from app.preprocessing.reusable_preprocessing_pipeline import (
+from reusable_preprocessing_pipeline import (
     fit_and_save_pipeline,
     load_pipeline,
     transform_new_data,
