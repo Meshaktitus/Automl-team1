@@ -410,3 +410,26 @@ def test_report_for_a_different_dataset_is_not_applied():
          "affected_column": "age", "affected_rows": 2}]}
     after = apply_quality_to_suggestions(suggestions, report, "d.csv")
     assert row_for(after, "age")["priority"] != "Blocked by quality"
+
+
+def test_report_with_several_datasets_in_one_file():
+    report = load_quality_report([
+        {"dataset": "A.xlsx", "total_rows": 5, "issues": [
+            {"rule_id": "NULL_CHECK", "severity": "Error",
+             "affected_column": "x", "affected_rows": 2}]},
+        {"dataset": "B.xlsx", "total_rows": 3, "issues": []},
+    ])
+    assert len(report["detected_issues"]) == 1
+    assert report["detected_issues"][0]["dataset"] == "A.xlsx"
+
+
+def test_warning_slash_audit_severity_is_recognised():
+    """Vinitha's Employee re-run uses the label 'Warning / Audit'."""
+    from quality_integration import issues_by_column
+    report = {"dataset": "T", "issues": [{
+        "rule_id": "RULE_INVALID_RANGE_HIRE_AGE",
+        "severity": "Warning / Audit", "affected_column": "HireDate",
+        "affected_rows": 2, "recommended_action": "Audit"}]}
+    issue = issues_by_column(report)["HireDate"][0]
+    assert issue["severity"] == "warning"
+    assert issue["unknown_severity"] is False

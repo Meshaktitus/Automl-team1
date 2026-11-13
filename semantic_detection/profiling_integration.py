@@ -30,6 +30,7 @@ PROJECT_FOLDER = Path(__file__).resolve().parent
 DEFAULT_OUTPUT = PROJECT_FOLDER / "outputs" / "profiling_semantic_report.csv"
 SAMPLE_CAP = 2000
 SUPPORTED_VERSION = "1.0-draft"
+REQUIRED_DATASET_FIELDS = ("row_count", "column_count", "duplicate_row_count")
 REQUIRED_COLUMN_FIELDS = (
     "name", "dtype", "inferred_type", "missing_count", "missing_pct",
     "unique_count", "likely_identifier",
@@ -59,13 +60,38 @@ def load_profile(source):
             f"Unsupported schema_version {data.get('schema_version')!r}; "
             f"expected {SUPPORTED_VERSION!r}"
         )
+    missing_dataset = [f for f in REQUIRED_DATASET_FIELDS
+                       if f not in data["dataset"]]
+    if missing_dataset:
+        raise ValueError(f"Profile 'dataset' lacks fields: {missing_dataset}")
+    for field in REQUIRED_DATASET_FIELDS:
+        _check_count(data["dataset"][field], f"dataset.{field}")
     for column in data["columns"]:
+        if not isinstance(column, dict):
+            raise ValueError("Every column in the profile must be an object")
         missing = [f for f in REQUIRED_COLUMN_FIELDS if f not in column]
         if missing:
             raise ValueError(
                 f"Column {column.get('name')!r} lacks fields: {missing}"
             )
+        label = f"column {column.get('name')!r}"
+        _check_count(column["missing_count"], f"{label} missing_count")
+        _check_count(column["unique_count"], f"{label} unique_count")
+        pct = column["missing_pct"]
+        if (isinstance(pct, bool) or not isinstance(pct, (int, float))
+                or not 0 <= pct <= 100):
+            raise ValueError(
+                f"{label} missing_pct must be a number from 0 to 100, "
+                f"got {pct!r}")
     return data
+
+
+def _check_count(value, label):
+    """Counts must be whole numbers of zero or more."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) \
+            or value < 0 or int(value) != value:
+        raise ValueError(
+            f"{label} must be a whole number of zero or more, got {value!r}")
 
 
 def dataset_name(profile):
@@ -122,6 +148,12 @@ def _stand_in_values(column, non_null):
         if _whole_numbers(column, low, high, unique):
             points = [int(round(p)) for p in points]
             points = list(dict.fromkeys(points))
+        if int(column["unique_count"]) < non_null:
+            # Values repeat in the real column (hour of day, month, age).
+            # The stand-in lists each distinct value once, so without this
+            # the "unique consecutive whole numbers" rule would call any
+            # compact numeric range an identifier.
+            points = points + points[:1]
         return points
 
     if inferred == "text":
@@ -174,6 +206,14 @@ def analyze_profile(profile):
             semantic_type = "text"
             confidence = max(confidence, 0.80)
             evidence = "Profiling classed the values as free text."
+        elif column["inferred_type"] == "mixed":
+            # text and numbers in one column: not safe to use as a target
+            # or a feature until the values are cleaned
+            alternatives.insert(0, semantic_type)
+            semantic_type = "unknown"
+            confidence = 0.50
+            evidence = ("Profiling found both text and numbers in this "
+                        "column; the type cannot be trusted.")
 
         rows.append({
             "dataset": name,

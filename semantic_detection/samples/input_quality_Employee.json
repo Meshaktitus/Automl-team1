@@ -1,0 +1,3 @@
+{"dataset":"HumanResources.Employee.xlsx","total_rows":290,"issues":[
+{"rule_id":"RULE_INVALID_RANGE_HIRE_AGE","severity":"Warning / Audit","affected_column":"BirthDate, HireDate","affected_rows":2,"recommended_action":"Audit"},
+{"rule_id":"RULE_NULL_STRUCTURAL","severity":"Low","affected_column":"OrganizationNode, OrganizationLevel","affected_rows":2,"recommended_action":"Do not impute"}]}
