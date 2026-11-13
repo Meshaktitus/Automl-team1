@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:gts:team1:dataset_profiling:request:1.0-draft",
+  "title": "Dataset Profiling Request",
+  "description": "Input to the Dataset Profiling module. Generic: works for any tabular dataset. Status: proposed, pending Team 1 review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "dataset_reference"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "Contract version. Must equal 1.0-draft until the contract is approved.",
+      "type": "string",
+      "const": "1.0-draft"
+    },
+    "request_id": {
+      "description": "Caller-generated id. Echoed in the response.",
+      "type": "string",
+      "minLength": 1
+    },
+    "dataset_reference": {
+      "$ref": "#/$defs/datasetReference"
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "options": {
+      "$ref": "#/$defs/options"
+    }
+  },
+  "$defs": {
+    "datasetReference": {
+      "description": "Which dataset to profile.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset_id",
+        "source_type"
+      ],
+      "properties": {
+        "dataset_id": {
+          "description": "Backend dataset id.",
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "description": "Display name (optional).",
+          "type": "string"
+        },
+        "source_type": {
+          "description": "How the data is delivered. Only 'file' is implemented; other types wait for Team 2's decision.",
+          "type": "string",
+          "enum": [
+            "file"
+          ]
+        },
+        "location": {
+          "description": "File path for source_type 'file'. Optional when the caller passes an already-loaded table to the module.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "metadata": {
+      "description": "Optional hints about the dataset. Never required.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": {
+          "description": "File format. Inferred from the file extension when omitted.",
+          "type": "string",
+          "enum": [
+            "csv",
+            "xlsx"
+          ]
+        },
+        "sheet_name": {
+          "description": "Excel sheet name or 0-based index. Default: first sheet.",
+          "type": [
+            "string",
+            "integer"
+          ]
+        },
+        "delimiter": {
+          "description": "CSV delimiter. Default: comma.",
+          "type": "string",
+          "minLength": 1
+        },
+        "encoding": {
+          "description": "CSV text encoding. Default: utf-8.",
+          "type": "string",
+          "minLength": 1
+        },
+        "missing_value_markers": {
+          "description": "Extra strings to treat as missing (for example NA, n/a).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "identifier_columns": {
+          "description": "Columns the caller declares as identifiers. Their sample values are never reported.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "options": {
+      "description": "Optional profiling behaviour.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "top_n_values": {
+          "description": "Number of most frequent values reported for categorical columns. Default 5.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "include_statistics": {
+          "description": "Include the per-column summary statistics. Default true.",
+          "type": "boolean"
+        },
+        "target_column": {
+          "description": "Optional. Column to treat as the target. Adds class_distribution to the response when the target has few distinct values.",
+          "type": "string",
+          "minLength": 1
+        },
+        "include_correlations": {
+          "description": "Include correlations between numerical columns. Default true.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0-draft",
+  "request_id": "req-0004",
+  "dataset_reference": {
+    "dataset_id": "ds-demo-001",
+    "name": "demo_customers.csv",
+    "source_type": "file",
+    "location": "samples/demo_customers.csv"
+  },
+  "metadata": {
+    "format": "csv",
+    "delimiter": ",",
+    "encoding": "utf-8",
+    "missing_value_markers": [
+      "NA",
+      "n/a"
+    ],
+    "identifier_columns": [
+      "customer_id"
+    ]
+  },
+  "options": {
+    "top_n_values": 5,
+    "include_statistics": true,
+    "target_column": "plan"
+  }
+}
