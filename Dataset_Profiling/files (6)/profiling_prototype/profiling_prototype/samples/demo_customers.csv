@@ -1,0 +1,7 @@
+customer_id,age,city,signup_date,plan,country,notes
+1,25,Bengaluru,2024-01-05,basic,IN,
+2,30,Pune,2024-02-11,pro,IN,
+3,NA,Pune,2024-03-02,basic,IN,
+4,41,Delhi,,pro,IN,
+5,30,Pune,2024-02-11,basic,IN,
+5,30,Pune,2024-02-11,basic,IN,

@@ -1,0 +1,26 @@
+PROFILING REGRESSION REPORT (2026-11-06T11:24:36)
+Python 3.15.1 | pandas 3.0.6 | numpy 2.5.4 | Windows 10
+
+== 1. Regression tests ==
+PASS  test_categorical_dataset_frequencies_match_independent_count (0.13 s)
+PASS  test_duplicate_heavy_dataset (0.16 s)
+PASS  test_mixed_type_dataset (0.05 s)
+PASS  test_null_heavy_dataset (0.04 s)
+PASS  test_numbers_stored_as_text_are_treated_as_text_not_numbers (0.01 s)
+PASS  test_numerical_dataset_matches_independent_calculation (0.07 s)
+PASS  test_unsupported_and_unreadable_input_returns_controlled_errors (0.02 s)
+PASS  test_wide_dataset_is_profiled_completely (1.29 s)
+8 passed, 0 failed
+
+== 2. Performance and memory observations ==
+Peak memory is the extra Python memory used during profiling, measured on a second run; the table itself is not included.
+case                                table MB  seconds  peak MB  response MB  result
+wide: 100 rows x 100 columns             0.3     0.32      0.8         0.08  OK, 100 columns profiled
+wide: 100 rows x 500 columns             1.5     1.76      2.2         0.34  OK, 500 columns profiled
+wide: 100 rows x 1000 columns            2.9     2.52      3.9         0.66  OK, 1000 columns profiled
+wide: 100 rows x 2000 columns            5.8     5.02      7.3         1.32  OK, 2000 columns profiled
+long: 200,000 rows x 5 columns          15.0     0.56     14.0         0.00  OK, 5 columns profiled
+
+== Summary ==
+Regression tests failing: 0 | performance cases with problems: 0
+Known limit: the whole table is held in memory, and wide tables produce proportionally larger responses; correlations are capped at 50 columns and 200 pairs.

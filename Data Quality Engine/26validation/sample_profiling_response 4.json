@@ -1,0 +1,178 @@
+{
+  "schema_version": "1.0-draft",
+  "request_id": "req-0001",
+  "module": "dataset_profiling",
+  "status": "warning",
+  "generated_at": "2026-10-26T07:43:27+00:00",
+  "duration_ms": 11.4,
+  "dataset_reference": {
+    "dataset_id": "ds-demo-001",
+    "name": "demo_customers.csv"
+  },
+  "dataset": {
+    "row_count": 6,
+    "column_count": 7,
+    "column_names": [
+      "customer_id",
+      "age",
+      "city",
+      "signup_date",
+      "plan",
+      "country",
+      "notes"
+    ],
+    "duplicate_row_count": 1
+  },
+  "columns": [
+    {
+      "name": "customer_id",
+      "position": 0,
+      "dtype": "int64",
+      "inferred_type": "numerical",
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "unique_count": 5,
+      "likely_identifier": true,
+      "warnings": [],
+      "summary": {
+        "min": 1.0,
+        "max": 5.0,
+        "mean": 3.3333,
+        "median": 3.5,
+        "std": 1.633
+      }
+    },
+    {
+      "name": "age",
+      "position": 1,
+      "dtype": "float64",
+      "inferred_type": "numerical",
+      "missing_count": 1,
+      "missing_pct": 16.67,
+      "unique_count": 3,
+      "likely_identifier": false,
+      "warnings": [],
+      "summary": {
+        "min": 25.0,
+        "max": 41.0,
+        "mean": 31.2,
+        "median": 30.0,
+        "std": 5.8907
+      }
+    },
+    {
+      "name": "city",
+      "position": 2,
+      "dtype": "str",
+      "inferred_type": "categorical",
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "unique_count": 3,
+      "likely_identifier": false,
+      "warnings": [],
+      "top_values": [
+        {
+          "value": "Pune",
+          "count": 4,
+          "percentage": 66.67
+        },
+        {
+          "value": "Bengaluru",
+          "count": 1,
+          "percentage": 16.67
+        },
+        {
+          "value": "Delhi",
+          "count": 1,
+          "percentage": 16.67
+        }
+      ]
+    },
+    {
+      "name": "signup_date",
+      "position": 3,
+      "dtype": "str",
+      "inferred_type": "datetime",
+      "missing_count": 1,
+      "missing_pct": 16.67,
+      "unique_count": 3,
+      "likely_identifier": false,
+      "warnings": [],
+      "summary": {
+        "min": "2024-01-05 00:00:00",
+        "max": "2024-03-02 00:00:00"
+      }
+    },
+    {
+      "name": "plan",
+      "position": 4,
+      "dtype": "str",
+      "inferred_type": "categorical",
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "unique_count": 2,
+      "likely_identifier": false,
+      "warnings": [],
+      "top_values": [
+        {
+          "value": "basic",
+          "count": 4,
+          "percentage": 66.67
+        },
+        {
+          "value": "pro",
+          "count": 2,
+          "percentage": 33.33
+        }
+      ]
+    },
+    {
+      "name": "country",
+      "position": 5,
+      "dtype": "str",
+      "inferred_type": "categorical",
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "unique_count": 1,
+      "likely_identifier": false,
+      "warnings": [
+        "CONSTANT_COLUMN"
+      ],
+      "top_values": [
+        {
+          "value": "IN",
+          "count": 6,
+          "percentage": 100.0
+        }
+      ]
+    },
+    {
+      "name": "notes",
+      "position": 6,
+      "dtype": "float64",
+      "inferred_type": "empty",
+      "missing_count": 6,
+      "missing_pct": 100.0,
+      "unique_count": 0,
+      "likely_identifier": false,
+      "warnings": [
+        "EMPTY_COLUMN"
+      ]
+    }
+  ],
+  "warnings": [
+    {
+      "code": "CONSTANT_COLUMN",
+      "severity": "info",
+      "column": "country",
+      "message": "Column contains a single distinct value."
+    },
+    {
+      "code": "EMPTY_COLUMN",
+      "severity": "warning",
+      "column": "notes",
+      "message": "Column has no values."
+    }
+  ],
+  "errors": []
+}

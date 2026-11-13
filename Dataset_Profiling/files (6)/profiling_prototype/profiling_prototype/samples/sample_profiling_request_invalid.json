@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0-draft",
+  "request_id": "req-0003",
+  "dataset_reference": {
+    "dataset_id": "ds-demo-001",
+    "name": "demo_customers.csv",
+    "source_type": "database",
+    "location": "samples/demo_customers.csv"
+  },
+  "metadata": {
+    "format": "csv",
+    "delimiter": ",",
+    "encoding": "utf-8",
+    "missing_value_markers": [
+      "NA",
+      "n/a"
+    ],
+    "identifier_columns": [
+      "customer_id"
+    ]
+  },
+  "options": {
+    "top_n_values": 0
+  }
+}

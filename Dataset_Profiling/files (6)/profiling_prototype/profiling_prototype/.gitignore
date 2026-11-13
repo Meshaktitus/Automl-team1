@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Never commit source data or personal information (the HR Employee table holds National ID numbers and birth dates)
+*.xlsx
+*.xls
+data/
+
+# Installers and local packaging
+*.exe
+send/
+profiling_prototype.zip
+
+# Generated locally, regenerate with the scripts in README.md
+hr_outputs/
+contract_response_run.json
+hr_profile_report.json
+synthetic_profile_report.json

@@ -1,0 +1,13 @@
+{
+    "target_dataset": "HumanResources.EmployeePayHistory",
+    "total_warnings_detected": 1,
+    "warnings": [
+        {
+            "column": "Rate",
+            "issue_type": "IQR_OUTLIER",
+            "severity": "LOW",
+            "count": 14,
+            "recommended_action": "Cap values at upper bound or review"
+        }
+    ]
+}
