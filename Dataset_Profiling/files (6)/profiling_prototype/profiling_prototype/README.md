@@ -1,6 +1,6 @@
 # Dataset Profiling (Team 1)
 
-**Status:** prototype. Contract version `1.0-draft` (proposed, pending Team 1 review; not final).
+
 
 The module takes a table (CSV or XLSX file, or a pandas DataFrame the caller has already loaded) and returns a structured JSON profile: dimensions, column types, missing values, distinct counts, duplicates, summary statistics, histograms, correlations, an optional class distribution for a selected target, and warnings. It returns a structured error instead of raising, and never modifies the source data.
 
